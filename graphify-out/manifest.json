@@ -138,9 +138,9 @@
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1792288307.532002,
-    "seen": 1792293611.0854778,
-    "ast_hash": "38b903fe3470fae9e31281dd636dd753",
+    "mtime": 1792324413.5461838,
+    "seen": 1792324472.9476874,
+    "ast_hash": "8a165521840609c26b47c774094b6317",
     "semantic_hash": ""
   },
   "scripts/setup-openclaw.sh": {
@@ -309,6 +309,12 @@
     "mtime": 1792319068.6860492,
     "seen": 1792319148.8950264,
     "ast_hash": "866680bf8761fe337949bfbd4dcbc376",
+    "semantic_hash": ""
+  },
+  "scripts/tunnel.ts": {
+    "mtime": 1792324410.7098742,
+    "seen": 1792324472.947695,
+    "ast_hash": "199f473179ad792a12e0f000f3cd42d1",
     "semantic_hash": ""
   }
 }

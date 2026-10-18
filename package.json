@@ -12,10 +12,11 @@
     "core"
   ],
   "scripts": {
-    "dev": "tsx watch core/src/server.ts",
+    "dev": "tsx watch --include .env core/src/server.ts",
     "check": "tsc --noEmit",
     "test": "node --test --import tsx \"core/src/**/*.test.ts\"",
-    "smoke": "tsx scripts/smoke.ts"
+    "smoke": "tsx scripts/smoke.ts",
+    "tunnel": "tsx scripts/tunnel.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
