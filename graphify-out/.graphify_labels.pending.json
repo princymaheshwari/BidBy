@@ -12,12 +12,15 @@
   "10": "ledger.ts",
   "11": "setup-openclaw.sh",
   "12": "rank.ts",
+  "13": "tunnel.ts",
   "14": "timer.ts",
   "15": "replies.ts",
   "16": "spectrum.ts",
   "17": "headstart.ts",
   "18": "BidBy",
+  "19": "BidBy Coordinator",
   "20": "BidBy Subscriptions",
+  "21": "BidBy Money In",
   "23": "routes.ts",
   "25": "smoke.ts"
 }

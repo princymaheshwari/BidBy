@@ -299,6 +299,7 @@
 
     let started = 0;
     let clock = null;
+    let activeId = null; // the answered call, so core hears the moment it ends
     const mmss = (s) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
     $("accept").onclick = async () => {
@@ -313,6 +314,7 @@
       $("timer").textContent = "00:00";
       show("incall");
 
+      activeId = id;
       const r = await api("/answer", { call_id: id });
       if (!r.ok) return finish("Call Failed");
       try {
@@ -338,6 +340,8 @@
 
     function finish(text) {
       if (!busy || $("incall").classList.contains("ended")) return; // hang up + onDisconnect: once
+      if (activeId) api("/ended", { call_id: activeId }).catch(() => {}); // core fetches the result right away
+      activeId = null;
       clearInterval(clock);
       conversation = null;
       $("timer").textContent = text;

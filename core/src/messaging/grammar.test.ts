@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  digestText, draftFooter, followUpText, headStartChecklistText, interruptText, money, parseReply, snoozeUntil, statusText,
+  afterCallLogText, digestText, draftFooter, followUpText, headStartChecklistText, interruptText, money, parseReply, snoozeUntil, statusText,
 } from "./grammar.js";
 
 // Sunday Oct 18 2026, 2:00 PM New York (EDT).
@@ -150,4 +150,26 @@ test("a tuition balance reads as money owed with the class-cancellation risk, no
       "Due tonight 11:59 PM.\n" +
       "Reply 1 for a drafted email to Student Financial Services, 2 for your payment options.",
   );
+});
+
+test("after a call, the next 4 deadlines go out soonest first, with renewals worded as renewals", () => {
+  const items = [
+    { title: "Conference travel reimbursement", domain: "money_in" as const, amount_at_risk_usd: 640, deadline_at: "2026-10-23T17:00:00-04:00" },
+    { title: "Amazon Prime trial ends", domain: "subs" as const, amount_at_risk_usd: 14.99, deadline_at: "2026-10-21T09:00:00-04:00" },
+    { title: "Northgate card payment due", domain: "credit" as const, amount_at_risk_usd: 50.31, deadline_at: "2026-10-19T23:59:00-04:00" },
+    { title: "Research award", domain: "money_in" as const, amount_at_risk_usd: 2500, deadline_at: "2026-10-20T17:00:00-04:00" },
+    { title: "TA timesheet", domain: "money_in" as const, amount_at_risk_usd: 380, deadline_at: "2026-10-21T17:00:00-04:00" },
+    { title: "Already past", domain: "credit" as const, amount_at_risk_usd: 10, deadline_at: "2026-10-17T17:00:00-04:00" },
+  ];
+  const nine = new Date("2026-10-18T21:00:00-04:00");
+  assert.equal(
+    afterCallLogText(items, nine),
+    "Evening log: 4 more deadlines coming up.\n" +
+      "1. Northgate card payment due: $50.31 is at risk in fees. Due tomorrow 11:59 PM.\n" +
+      "2. Research award: $2,500 is waiting to be claimed. Due Tue 5:00 PM.\n" +
+      "3. Amazon Prime trial ends: $14.99 is about to be charged. Renews Wed 9:00 AM.\n" +
+      "4. TA timesheet: $380 is waiting to be claimed. Due Wed 5:00 PM.\n" +
+      "Reply status anytime to see what's open.",
+  );
+  assert.equal(afterCallLogText([], nine), null);
 });

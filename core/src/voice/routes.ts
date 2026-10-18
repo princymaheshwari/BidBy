@@ -14,7 +14,7 @@ import { db } from "../db.js";
 import { emit } from "../events.js";
 import { money } from "../messaging/grammar.js";
 import { getObligation } from "../pipeline/ledger.js";
-import { failureReason, finishCall, markAnswering, processCallResult, resultFromConversation } from "./calls.js";
+import { failureReason, finishCall, markAnswering, markHungUp, processCallResult, resultFromConversation } from "./calls.js";
 import { conversationToken, dynamicVariables, getCall, type Call } from "./elevenlabs.js";
 import { markObligationDone, obligationDetails, snoozeObligation } from "./tools.js";
 
@@ -193,6 +193,16 @@ voice.post("/phone/attach", async (c) => {
   if (changed === 0) return c.json({ error: "call already answered or ended" }, 409);
   const call = getCall(body.data.call_id)!;
   emit("call.answered", { call_id: call.id, obligation_id: call.obligation_id, conversation_id: call.conversation_id });
+  return c.json({ ok: true });
+});
+
+// The page hung up (either side): fetch the result now instead of waiting for the post-call webhook.
+voice.post("/phone/ended", async (c) => {
+  const body = CallBody.safeParse(await c.req.json().catch(() => null));
+  if (!body.success) return c.json({ error: "body must be {call_id}" }, 400);
+  const call = getCall(body.data.call_id);
+  if (!call || call.provider !== "browser") return c.json({ error: "unknown call" }, 404);
+  markHungUp(call.id);
   return c.json({ ok: true });
 });
 

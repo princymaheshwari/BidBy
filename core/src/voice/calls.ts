@@ -5,9 +5,9 @@ import { now } from "../clock.js";
 import { RECOVERY_AFTER_MINUTES, RING_TIMEOUT_MS } from "../config.js";
 import { db } from "../db.js";
 import { emit } from "../events.js";
-import { callClosingText } from "../messaging/grammar.js";
+import { afterCallLogText, callClosingText } from "../messaging/grammar.js";
 import { sendToUser } from "../messaging/spectrum.js";
-import { getObligation, isFinal } from "../pipeline/ledger.js";
+import { getObligation, getOpen, isFinal } from "../pipeline/ledger.js";
 import { callByConversation, getCall, getConversation, initiatedCalls, type Call, type ConversationData } from "./elevenlabs.js";
 import { markObligationDone, snoozeObligation } from "./tools.js";
 
@@ -46,6 +46,10 @@ export async function finishCall(callId: string, result: CallResult, via: Finish
     if (changed === 0) return alreadyFinished(call, via);
     if (via === "recovery") emit("call.recovered", { call_id: callId, obligation_id: call.obligation_id });
     emit("call.completed", { call_id: callId, obligation_id: call.obligation_id, status, via, summary: result.summary });
+    hungUp.delete(callId);
+    // After the call: one text with the next deadlines, soonest first (the called item is already handled).
+    const log = afterCallLogText(getOpen().filter((o) => o.id !== call.obligation_id), now());
+    if (log) await sendToUser(log, "digest", null);
     return true;
   }
 
@@ -76,6 +80,10 @@ export async function processCallResult(conversationId: string, result: CallResu
 
 // --- tick step: ring timeout (browser) and recovery poll (live, browser) ---
 
+/** Browser calls the phone page has hung up: their result is fetched on the next ticks. */
+const hungUp = new Map<string, number>();
+export const markHungUp = (callId: string) => hungUp.set(callId, performance.now());
+
 /** Calls being answered on the phone page right now: the ring timeout must not end them. */
 const answering = new Map<string, number>();
 export const markAnswering = (callId: string) => answering.set(callId, performance.now());
@@ -89,10 +97,11 @@ export async function checkCalls(at: Date): Promise<void> {
       if (age >= RING_TIMEOUT_MS) await finishCall(call.id, { kind: "failure", reason: "no-answer" }, "timeout");
       continue;
     }
-    if (call.provider === "mock" || !call.conversation_id || age < RECOVERY_AFTER_MINUTES * MINUTE_MS) continue;
+    const ended = hungUp.has(call.id); // the phone page hung up: ask ElevenLabs every tick until the result is ready
+    if (call.provider === "mock" || !call.conversation_id || (!ended && age < RECOVERY_AFTER_MINUTES * MINUTE_MS)) continue;
     try {
       const result = resultFromConversation(await getConversation(call.conversation_id));
-      if (result) await finishCall(call.id, result, "recovery");
+      if (result) await finishCall(call.id, result, ended ? "phone" : "recovery");
     } catch (err) {
       console.error(`[voice] recovery ${call.id}: ${(err as Error).message}`);
     }

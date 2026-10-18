@@ -97,6 +97,33 @@ export function digestText(items: Item[], at: Date): string | null {
   ].join("\n");
 }
 
+const partOfDay = (at: Date) => {
+  const h = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "numeric", hourCycle: "h23" }).format(at));
+  return h < 12 ? "Morning" : h < 17 ? "Afternoon" : "Evening";
+};
+
+/**
+ * After a call: the next deadlines, soonest first, at most 4. Null when nothing is open.
+ * Evening log: 4 more deadlines coming up.
+ * 1. Amazon Prime trial ends: $14.99 is about to be charged. Renews Wed 9:00 AM.
+ */
+export function afterCallLogText(items: Item[], at: Date): string | null {
+  const next = [...items]
+    .filter((i) => Date.parse(i.deadline_at) > at.getTime())
+    .sort((a, b) => Date.parse(a.deadline_at) - Date.parse(b.deadline_at))
+    .slice(0, 4);
+  if (next.length === 0) return null;
+  const noun = next.length === 1 ? "deadline" : "deadlines";
+  return [
+    `${partOfDay(at)} log: ${next.length} more ${noun} coming up.`,
+    ...next.map((i, n) => {
+      const when = formatWhenNY(new Date(i.deadline_at), at);
+      return `${n + 1}. ${i.title}: ${money(i.amount_at_risk_usd)} ${copyFor(i).risk}. ${i.domain === "subs" ? "Renews" : "Due"} ${when}.`;
+    }),
+    "Reply status anytime to see what's open.",
+  ].join("\n");
+}
+
 /** Top 3 unfinished items, highest score first. */
 export function statusText(items: Item[], at: Date, protectedUsd: number): string {
   if (items.length === 0) return `Nothing open. ${money(protectedUsd)} protected this month.`;

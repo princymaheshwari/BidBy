@@ -60,9 +60,9 @@
     "semantic_hash": ""
   },
   "core/src/messaging/spectrum.ts": {
-    "mtime": 1792309818.3502223,
-    "seen": 1792309842.2210915,
-    "ast_hash": "059e3bdc248a76de536ec0b9296acf68",
+    "mtime": 1792335751.0688229,
+    "seen": 1792339653.0724192,
+    "ast_hash": "6e099f7bb6e00ae9b78a38ef362609d9",
     "semantic_hash": ""
   },
   "core/src/pipeline/headstart.ts": {
@@ -114,9 +114,9 @@
     "semantic_hash": ""
   },
   "core/src/voice/routes.ts": {
-    "mtime": 1792323281.5828927,
-    "seen": 1792323320.5763514,
-    "ast_hash": "7f41c1c55aa62b97ec93cae4bed2bfc1",
+    "mtime": 1792339469.5952601,
+    "seen": 1792339653.072481,
+    "ast_hash": "504dd19c6c6c47c61400c1b50433fa7d",
     "semantic_hash": ""
   },
   "fixtures/held.json": {
@@ -162,9 +162,9 @@
     "semantic_hash": ""
   },
   "core/public/index.html": {
-    "mtime": 1792330421.8168864,
-    "seen": 1792332808.6028023,
-    "ast_hash": "e5eeb821d5e76ffdd1aafe18c5bb7adf",
+    "mtime": 1792335751.0688229,
+    "seen": 1792339653.0725152,
+    "ast_hash": "b9f3341dd9abd2057ec528b85d8c59c5",
     "semantic_hash": ""
   },
   "openclaw/agents/aid/AGENTS.md": {
@@ -204,15 +204,15 @@
     "semantic_hash": ""
   },
   "core/src/messaging/grammar.test.ts": {
-    "mtime": 1792332375.152682,
-    "seen": 1792332808.602742,
-    "ast_hash": "762420488783bac6af2430857258ac98",
+    "mtime": 1792339481.0559146,
+    "seen": 1792339653.0724094,
+    "ast_hash": "f46c17413cd70047a15a2a2966df8ad4",
     "semantic_hash": ""
   },
   "core/src/messaging/grammar.ts": {
-    "mtime": 1792332375.1517558,
-    "seen": 1792332808.6027439,
-    "ast_hash": "b492a0bbdcb24b87c384247d67fbc08d",
+    "mtime": 1792339494.9150412,
+    "seen": 1792339653.0724134,
+    "ast_hash": "142d8d693c96bb530d732b071d037408",
     "semantic_hash": ""
   },
   "core/src/nytime.ts": {
@@ -270,9 +270,9 @@
     "semantic_hash": ""
   },
   "core/src/voice/calls.ts": {
-    "mtime": 1792317509.1801639,
-    "seen": 1792318122.6290421,
-    "ast_hash": "8636cfd53f2ea571d887ae3f5a635a56",
+    "mtime": 1792339469.59947,
+    "seen": 1792339653.0724704,
+    "ast_hash": "93253bc0a2bd119ed06c75e164502988",
     "semantic_hash": ""
   },
   "core/src/voice/elevenlabs.test.ts": {
@@ -306,9 +306,9 @@
     "semantic_hash": ""
   },
   "core/public/phone.html": {
-    "mtime": 1792319068.6860492,
-    "seen": 1792319148.8950264,
-    "ast_hash": "866680bf8761fe337949bfbd4dcbc376",
+    "mtime": 1792339469.5832002,
+    "seen": 1792339653.0725205,
+    "ast_hash": "0c698052dafb5e63b04c22efad077636",
     "semantic_hash": ""
   },
   "scripts/tunnel.ts": {
