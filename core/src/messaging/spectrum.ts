@@ -30,19 +30,36 @@ export function startSpectrum(): void {
     console.error("[spectrum] SPECTRUM_PROJECT_ID / SPECTRUM_PROJECT_SECRET missing in .env: texting is off");
     return;
   }
-  app = connect(id, secret);
-  app.then(
-    (a) => {
+  void run(id, secret);
+}
+
+const RECONNECT_MS = 3_000;
+
+/** Connects and listens; if the inbound stream ends or fails, reconnects, so replies are never silently lost. */
+async function run(id: string, secret: string): Promise<void> {
+  for (;;) {
+    try {
+      app = connect(id, secret);
+      const a = await app;
       console.log("[spectrum] connected (cloud iMessage)");
-      void listen(a);
-    },
-    (err) => console.error(`[spectrum] connect failed: ${(err as Error).message}`),
-  );
+      await listen(a);
+      console.log("[spectrum] message stream closed; reconnecting");
+    } catch (err) {
+      console.error(`[spectrum] ${(err as Error).message}; reconnecting`);
+    }
+    userSpace = null;
+    await sleep(RECONNECT_MS);
+  }
 }
 
 async function listen(a: App): Promise<void> {
   for await (const [space, message] of a.messages) {
     try {
+      // Every inbound event is recorded, so a reply that goes missing can be traced to Photon or to BidBy.
+      if (message.direction !== "outbound") {
+        console.log(`[spectrum] inbound ${message.content.type} from ${mask(message.sender?.id ?? "")}`);
+        emit("spectrum.inbound", { from: mask(message.sender?.id ?? ""), content_type: message.content.type });
+      }
       if (message.direction === "outbound") continue;
       const from = message.sender?.id ?? "";
       if (!samePhone(from, config.USER_PHONE)) {
@@ -60,7 +77,6 @@ async function listen(a: App): Promise<void> {
       console.error("[spectrum] inbound message failed:", err);
     }
   }
-  console.log("[spectrum] message stream closed");
 }
 
 /** The stored DM, or a new one built from USER_PHONE (proactive path: user has texted the line before). */

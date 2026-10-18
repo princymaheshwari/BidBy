@@ -385,6 +385,7 @@
       "text.sent": (p) => ["text", `📱 Text (${p.kind.replace("_", "-")}): ${firstLine(p.body)}`],
       "text.received": (p) => ["text", `💬 You replied: “${truncate(p.text, 60)}”`],
       "text.ignored": () => null,
+      "spectrum.inbound": () => null,
       "email.sent": (p) => ["good", `📧 Emailed ${p.to}: “${truncate(p.subject, 70)}”${p.mode === "log" ? " (log only)" : ""}`],
       "email.refused": (p) => ["warn", `📧 Not sent: ${p.to ?? "no recipient"} (${p.reason})`],
       "email.failed": (p) => ["warn", `📧 Email failed: ${truncate(p.error, 90)}`],
