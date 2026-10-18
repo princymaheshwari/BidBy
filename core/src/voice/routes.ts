@@ -40,9 +40,26 @@ export const tunnelGuard: MiddlewareHandler = async (c, next) => {
 
 // --- webhook tools ---
 
+/** The token in an Authorization header: "Bearer <t>", tolerating case, extra spaces, a doubled or missing "Bearer". */
+export function bearerToken(header: string | undefined): string {
+  let t = (header ?? "").trim();
+  for (let i = 0; i < 2 && /^bearer\s+/i.test(t); i++) t = t.replace(/^bearer\s+/i, "").trim();
+  return t;
+}
+
+/** What was wrong with a rejected header, for the log. Lengths and shape only, never the value. */
+function describeAuth(header: string | undefined, secret: string): string {
+  if (!header) return "no Authorization header";
+  const token = bearerToken(header);
+  const bearers = (header.match(/bearer\s+/gi) ?? []).length;
+  return `Authorization: ${header.length} chars, "Bearer" x${bearers}, token ${token.length} chars (expected ${secret.length})`;
+}
+
 voice.use("/tools/*", async (c, next) => {
   const secret = config.BIDBY_TOOL_SECRET;
-  if (!secret || !safeEqual(c.req.header("authorization") ?? "", `Bearer ${secret}`)) {
+  const header = c.req.header("authorization");
+  if (!secret || !safeEqual(bearerToken(header), secret)) {
+    console.warn(`[voice] tool ${c.req.path} rejected: ${secret ? describeAuth(header, secret) : "BIDBY_TOOL_SECRET not set"}`);
     return c.json({ error: "unauthorized" }, 401);
   }
   await next();

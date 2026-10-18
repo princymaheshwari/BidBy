@@ -32,6 +32,18 @@ test("tools: 401 without or with the wrong bearer secret", async () => {
   assert.equal(eventsOf("voice.tool_called").length, 0);
 });
 
+test("tools: the same secret is accepted despite formatting slips; anything else is not", async () => {
+  const id = addObligation();
+  const status = async (authorization: string) =>
+    (await post("/voice/tools/details", { obligation_id: id }, { authorization, "content-type": "application/json" })).status;
+  assert.equal(await status("tool-secret"), 200);
+  assert.equal(await status("bearer   tool-secret "), 200);
+  assert.equal(await status("Bearer Bearer tool-secret"), 200);
+  assert.equal(await status("Bearer tool-secre"), 401);
+  assert.equal(await status("Bearer tool-secret-x"), 401);
+  assert.equal(await status("Basic tool-secret"), 401);
+});
+
 test("details: short strings to read aloud; unknown obligation 404", async () => {
   const id = addObligation();
   const res = await post("/voice/tools/details", { obligation_id: id }, TOOL);
