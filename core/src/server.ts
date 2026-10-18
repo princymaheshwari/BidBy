@@ -11,6 +11,7 @@ import { emit, eventsStream } from "./events.js";
 import { findFixture, loadInbox, renderFixture } from "./fixtures.js";
 import { ingest } from "./pipeline/ingest.js";
 import { dismiss, getObligation, getOpen, listObligations, markDone, snooze } from "./pipeline/ledger.js";
+import { latestDecision, latestScores, rank } from "./pipeline/rank.js";
 
 const INDEX_HTML = resolve(import.meta.dirname, "../public/index.html");
 const HOUR_MS = 3_600_000;
@@ -44,8 +45,16 @@ app.post("/api/ingest", async (c) => {
   return c.json(await ingest(body.data));
 });
 
-// Scores are filled in by ranking (spec 03).
-app.get("/api/obligations", (c) => c.json(listObligations().map((o) => ({ ...o, score: null }))));
+app.get("/api/obligations", (c) => {
+  const scores = latestScores();
+  return c.json(listObligations().map((o) => ({ ...o, score: scores[o.id] ?? null })));
+});
+
+// --- ranking ---
+
+app.post("/api/rank", async (c) => c.json(await rank()));
+
+app.get("/api/decisions/latest", (c) => c.json(latestDecision()));
 
 const ActionBody = z.object({
   action: z.enum(["done", "snooze", "dismiss"]),
@@ -83,7 +92,7 @@ app.post("/api/demo/clock", async (c) => {
 
 let resetting = false;
 
-// Clears state, then ingests the seeded inbox in received order (every received_at is in the past).
+// Clears state, ingests the seeded inbox in received order (every received_at is in the past), then ranks once.
 app.post("/api/demo/reset", async (c) => {
   if (resetting) return c.json({ error: "a reset is already running" }, 409);
   resetting = true;
@@ -92,8 +101,9 @@ app.post("/api/demo/reset", async (c) => {
     emit("demo.reset", { now: now().toISOString() });
     const base = now();
     const inbox = loadInbox().sort((a, b) => a.received_at_offset_hours - b.received_at_offset_hours);
-    for (const f of inbox) await ingest(renderFixture(f, base), { fixture_id: f.id });
+    for (const f of inbox) await ingest(renderFixture(f, base), { fixture_id: f.id, rank: false });
     emit("demo.seeded", { messages: inbox.length, open_obligations: getOpen().length });
+    await rank();
     return c.json({ ok: true });
   } finally {
     resetting = false;

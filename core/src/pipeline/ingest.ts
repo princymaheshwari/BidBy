@@ -5,6 +5,7 @@ import { formatNY, now } from "../clock.js";
 import { db, newId } from "../db.js";
 import { emit } from "../events.js";
 import { getObligation, getOpen, markDone, type Obligation } from "./ledger.js";
+import { rankSoon } from "./rank.js";
 
 export interface IncomingMessage {
   source: "email" | "slack" | "bank";
@@ -22,12 +23,21 @@ export interface IngestResult {
 
 type Extracted = RecordObligations["obligations"][number];
 
-export async function ingest(msg: IncomingMessage, meta: { fixture_id?: string } = {}): Promise<IngestResult> {
+/**
+ * Stores and extracts one message. If the ledger changed, a ranking round starts in the background
+ * unless `rank: false` (reset seeds many messages, then ranks once).
+ */
+export async function ingest(
+  msg: IncomingMessage,
+  opts: { fixture_id?: string; rank?: boolean } = {},
+): Promise<IngestResult> {
   const raw_message_id = newId("msg");
   db.prepare(
     "INSERT INTO raw_messages (id, source, sender, subject, body, received_at) VALUES (?, ?, ?, ?, ?, ?)",
   ).run(raw_message_id, msg.source, msg.sender, msg.subject, msg.body, msg.received_at);
-  emit("message.received", { raw_message_id, ...meta, source: msg.source, sender: msg.sender, subject: msg.subject });
+  emit("message.received", {
+    raw_message_id, fixture_id: opts.fixture_id, source: msg.source, sender: msg.sender, subject: msg.subject,
+  });
 
   const result: IngestResult = { raw_message_id, obligation_ids: [], completed_ids: [] };
   const open = getOpen();
@@ -58,7 +68,8 @@ export async function ingest(msg: IncomingMessage, meta: { fixture_id?: string }
   for (const id of extracted.completes) {
     if (openIds.has(id) && markDone(id, "confirmation")) result.completed_ids.push(id);
   }
-  // Ranking after each ingest is wired in spec 03.
+  const changed = result.obligation_ids.length > 0 || result.completed_ids.length > 0;
+  if (changed && opts.rank !== false) rankSoon();
   return result;
 }
 

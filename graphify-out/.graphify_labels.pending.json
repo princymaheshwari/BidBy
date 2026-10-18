@@ -1,11 +1,10 @@
 {
-  "0": "BidBy Extractor",
+  "0": "now",
   "1": "package.json",
   "2": "config.ts",
   "3": "compilerOptions",
-  "4": "core/package.json",
+  "4": "dependencies",
   "5": "BidBy Aid",
-  "6": "BidBy Coordinator",
   "7": "BidBy Credit",
   "8": "events.ts",
   "9": "BidBy Money In",
@@ -18,8 +17,6 @@
   "17": "headstart.ts",
   "18": "ingest.ts",
   "20": "rank.ts",
-  "21": "score.ts",
-  "22": "score.test.ts",
   "23": "elevenlabs.ts",
   "24": "routes.ts",
   "25": "smoke.ts"

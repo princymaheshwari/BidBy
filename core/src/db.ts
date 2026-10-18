@@ -114,7 +114,7 @@ db.prepare("UPDATE settings SET user_phone = ?").run(config.USER_PHONE);
 
 // --- ids ---
 
-export type IdPrefix = "ob" | "msg" | "bid" | "dec" | "hs" | "txt" | "rep" | "call" | "evt";
+export type IdPrefix = "ob" | "msg" | "bid" | "dec" | "hs" | "txt" | "rep" | "call" | "evt" | "round";
 
 export function newId(prefix: IdPrefix): string {
   return `${prefix}_${randomBytes(5).toString("hex")}`;
