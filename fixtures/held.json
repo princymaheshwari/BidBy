@@ -1,10 +1,34 @@
 [
   {
-    "id": "placeholder_verification",
+    "id": "verification",
     "source": "email",
-    "sender": "finaid@placeholder-university.example",
-    "subject": "PLACEHOLDER: Action required for your aid",
-    "body": "Placeholder aid office email. Real content arrives in spec 07.",
+    "sender": "finaid@gtlstate.example",
+    "subject": "Action required: you've been selected for FAFSA verification",
+    "body": "Dear Jordan,\n\nYour 2026-27 FAFSA has been selected for verification. Until verification is complete, your financial aid of $3,700 (Federal Pell Grant $2,900 and State Opportunity Grant $800) is on hold and will not be disbursed.\n\nPlease submit the following documents in the Financial Aid Portal by {{day:+0@23:59}}:\n1. 2025 IRS Tax Return Transcript\n2. 2026-27 Verification Worksheet (signed)\n\nIf we do not receive both documents by the deadline, your aid may be cancelled for the term.\n\nQuestions? Reply to this email or visit the Office of Financial Aid, Student Services Building, Room 110.\n\nOffice of Financial Aid\nGT-like State University",
+    "received_at_offset_hours": 0
+  },
+  {
+    "id": "phishing",
+    "source": "email",
+    "sender": "security@fafsa-help-desk.co",
+    "subject": "FAFSA Account Locked - verify your SSN immediately",
+    "body": "URGENT: Your FAFSA account has been locked due to suspicious activity. To avoid losing your financial aid, verify your identity within 2 hours by entering your Social Security Number and bank login at fafsa-help-desk.co/verify. Failure to act will result in permanent loss of aid.",
+    "received_at_offset_hours": 0
+  },
+  {
+    "id": "verification_confirmed",
+    "source": "email",
+    "sender": "finaid@gtlstate.example",
+    "subject": "Verification documents received",
+    "body": "Dear Jordan,\n\nWe have received your verification documents (2025 IRS Tax Return Transcript and 2026-27 Verification Worksheet). Your verification is complete and the hold on your financial aid has been released. Your aid will disburse in the next cycle.\n\nOffice of Financial Aid\nGT-like State University",
+    "received_at_offset_hours": 0
+  },
+  {
+    "id": "card_paid",
+    "source": "bank",
+    "sender": "alerts@northgatebank.example",
+    "subject": "Payment received - thank you",
+    "body": "Hi Jordan,\n\nWe received your payment of $412.60 to your Northgate Student Card. Your statement balance is paid in full and no late fee will apply.\n\nNorthgate Bank",
     "received_at_offset_hours": 0
   }
 ]

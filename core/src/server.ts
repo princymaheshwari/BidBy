@@ -6,12 +6,15 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { advance, now, setTo } from "./clock.js";
 import { config } from "./config.js";
-import { clearAll, db, getSettings, newId } from "./db.js";
+import { clearAll, getSettings } from "./db.js";
 import { emit, eventsStream } from "./events.js";
-import { findFixture, type Fixture } from "./fixtures.js";
+import { findFixture, loadInbox, renderFixture } from "./fixtures.js";
+import { ingest } from "./pipeline/ingest.js";
+import { dismiss, getObligation, getOpen, listObligations, markDone, snooze } from "./pipeline/ledger.js";
 
 const INDEX_HTML = resolve(import.meta.dirname, "../public/index.html");
 const HOUR_MS = 3_600_000;
+const DEFAULT_SNOOZE_HOURS = 2;
 
 const app = new Hono();
 
@@ -24,6 +27,43 @@ app.onError((err, c) => {
 app.get("/", (c) => c.html(readFileSync(INDEX_HTML, "utf8")));
 
 app.get("/api/events", (c) => eventsStream(c));
+
+// --- ingest + ledger ---
+
+const IngestBody = z.object({
+  source: z.enum(["email", "slack", "bank"]),
+  sender: z.string(),
+  subject: z.string(),
+  body: z.string(),
+  received_at: z.string().datetime({ offset: true }),
+});
+
+app.post("/api/ingest", async (c) => {
+  const body = IngestBody.safeParse(await c.req.json().catch(() => null));
+  if (!body.success) return c.json({ error: "body must be {source, sender, subject, body, received_at}" }, 400);
+  return c.json(await ingest(body.data));
+});
+
+// Scores are filled in by ranking (spec 03).
+app.get("/api/obligations", (c) => c.json(listObligations().map((o) => ({ ...o, score: null }))));
+
+const ActionBody = z.object({
+  action: z.enum(["done", "snooze", "dismiss"]),
+  until: z.string().datetime({ offset: true }).optional(),
+});
+
+app.post("/api/obligations/:id/action", async (c) => {
+  const body = ActionBody.safeParse(await c.req.json().catch(() => null));
+  if (!body.success) return c.json({ error: 'body must be {action: "done" | "snooze" | "dismiss", until?}' }, 400);
+  const id = c.req.param("id");
+  if (!getObligation(id)) return c.json({ error: `unknown obligation "${id}"` }, 404);
+
+  const { action, until } = body.data;
+  if (action === "done") markDone(id, "api");
+  else if (action === "dismiss") dismiss(id);
+  else snooze(id, until ?? new Date(now().getTime() + DEFAULT_SNOOZE_HOURS * HOUR_MS).toISOString());
+  return c.json(getObligation(id));
+});
 
 // --- demo controls ---
 
@@ -41,10 +81,23 @@ app.post("/api/demo/clock", async (c) => {
   return c.json({ now: t.toISOString() });
 });
 
-app.post("/api/demo/reset", (c) => {
-  clearAll();
-  emit("demo.reset", { now: now().toISOString() });
-  return c.json({ ok: true });
+let resetting = false;
+
+// Clears state, then ingests the seeded inbox in received order (every received_at is in the past).
+app.post("/api/demo/reset", async (c) => {
+  if (resetting) return c.json({ error: "a reset is already running" }, 409);
+  resetting = true;
+  try {
+    clearAll();
+    emit("demo.reset", { now: now().toISOString() });
+    const base = now();
+    const inbox = loadInbox().sort((a, b) => a.received_at_offset_hours - b.received_at_offset_hours);
+    for (const f of inbox) await ingest(renderFixture(f, base), { fixture_id: f.id });
+    emit("demo.seeded", { messages: inbox.length, open_obligations: getOpen().length });
+    return c.json({ ok: true });
+  } finally {
+    resetting = false;
+  }
 });
 
 const InjectBody = z.object({ fixture_id: z.string() });
@@ -55,23 +108,8 @@ app.post("/api/demo/inject", async (c) => {
 
   const fixture = findFixture(body.data.fixture_id);
   if (!fixture) return c.json({ error: `unknown fixture "${body.data.fixture_id}"` }, 404);
-
-  // Until spec 02 wires in ingest(), inject only stores the raw message.
-  const raw_message_id = storeRawMessage(fixture);
-  return c.json({ raw_message_id, obligation_ids: [], completed_ids: [] });
+  return c.json(await ingest(renderFixture(fixture, now()), { fixture_id: fixture.id }));
 });
-
-function storeRawMessage(f: Fixture): string {
-  const id = newId("msg");
-  const received_at = new Date(now().getTime() + f.received_at_offset_hours * HOUR_MS).toISOString();
-  db.prepare(
-    "INSERT INTO raw_messages (id, source, sender, subject, body, received_at) VALUES (?, ?, ?, ?, ?, ?)",
-  ).run(id, f.source, f.sender, f.subject, f.body, received_at);
-  emit("message.received", {
-    raw_message_id: id, fixture_id: f.id, source: f.source, sender: f.sender, subject: f.subject,
-  });
-  return id;
-}
 
 // --- boot ---
 

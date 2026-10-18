@@ -1,18 +1,130 @@
 [
   {
-    "id": "placeholder_card_statement",
+    "id": "card_statement",
     "source": "bank",
-    "sender": "alerts@placeholder-bank.example",
-    "subject": "PLACEHOLDER: Your statement is ready",
-    "body": "Placeholder card statement. Real content arrives in spec 07.",
+    "sender": "alerts@northgatebank.example",
+    "subject": "Your Northgate Student Card statement is ready",
+    "body": "Hi Jordan,\n\nYour Northgate Student Card statement is ready.\n\nStatement balance: $412.60\nMinimum payment due: $35.00\nPayment due date: {{day:+1@23:59}}\nPurchase APR: 29.99%\n\nIf we don't receive at least your minimum payment by the due date, a late fee of up to $40 may apply and your account may be reported late.\n\nView your statement and make a payment in the Northgate app.\n\nNorthgate Bank",
+    "received_at_offset_hours": -50
+  },
+  {
+    "id": "newsletter_campus",
+    "source": "email",
+    "sender": "news@gtlstate.example",
+    "subject": "This Week at GT-like State: homecoming, study rooms, and more",
+    "body": "Homecoming parade is Saturday at 10 AM on Central Avenue. The library added 12 bookable study rooms on floor 3. The dining hall is trying out late-night hours through November. Have a great week!",
+    "received_at_offset_hours": -46
+  },
+  {
+    "id": "promo_preapproved",
+    "source": "bank",
+    "sender": "offers@northgatebank.example",
+    "subject": "Pre-approved! Upgrade to Northgate Platinum today",
+    "body": "Great news, Jordan! You're pre-approved for the Northgate Platinum card with 3% cash back on dining. No annual fee the first year. Offer ends soon. Tap to accept in the app.",
+    "received_at_offset_hours": -44
+  },
+  {
+    "id": "club_chess",
+    "source": "email",
+    "sender": "chessclub@gtlstate.example",
+    "subject": "Chess Club: blitz night Thursday",
+    "body": "Blitz night is Thursday at 7 PM in Student Center 204. Bring a board if you have one. Pizza provided. All skill levels welcome!",
+    "received_at_offset_hours": -40
+  },
+  {
+    "id": "scholarship_slack",
+    "source": "slack",
+    "sender": "Dana Okafor (#opportunities, GT-like State CS Slack)",
+    "subject": "Hope Forward Scholarship: $2,000, deadline coming up",
+    "body": "Hey all! The Hope Forward Scholarship is open to sophomores and juniors in CS. It's a $2,000 award. Applications are due {{day:+2@17:00}}. You need a current resume and a 300-word essay on a problem you want to solve with tech. Apply through the department scholarship portal. Don't miss it!",
+    "received_at_offset_hours": -30
+  },
+  {
+    "id": "promo_rideshare",
+    "source": "email",
+    "sender": "deals@zipride.example",
+    "subject": "50% off your next 3 rides",
+    "body": "Heading home for the weekend? Get 50% off your next 3 rides with code CAMPUS50. Valid for new and returning riders. Terms apply.",
+    "received_at_offset_hours": -28
+  },
+  {
+    "id": "reimbursement_travel",
+    "source": "email",
+    "sender": "travel@gtlstate.example",
+    "subject": "Reminder: file your conference travel reimbursement",
+    "body": "Hi Jordan,\n\nOur records show you traveled to the Regional Undergraduate Research Conference. You are eligible for a reimbursement of $640 for registration and lodging.\n\nReimbursement requests must be filed in the travel portal with receipts by {{day:+5@17:00}}. Requests filed after the window closes cannot be paid.\n\nUniversity Travel Office",
+    "received_at_offset_hours": -26
+  },
+  {
+    "id": "subs_renewal",
+    "source": "email",
+    "sender": "membership@boxprime.example",
+    "subject": "Your BoxPrime Student membership renews soon",
+    "body": "Hi Jordan,\n\nYour free BoxPrime Student trial ends and your paid membership renews on {{day:+2@09:00}}. You'll be charged $14.99/month to the card on file.\n\nDon't want to continue? You can cancel anytime before your renewal date in Account > Memberships.\n\nBoxPrime",
     "received_at_offset_hours": -20
   },
   {
-    "id": "placeholder_newsletter",
+    "id": "library_rooms",
     "source": "email",
-    "sender": "news@placeholder-club.example",
-    "subject": "PLACEHOLDER: This week in clubs",
-    "body": "Placeholder noise email. Real content arrives in spec 07.",
+    "sender": "library@gtlstate.example",
+    "subject": "New: reserve study rooms online",
+    "body": "You can now reserve library study rooms up to 7 days ahead from the library website. Rooms seat 2 to 6 people and have whiteboards and screens.",
+    "received_at_offset_hours": -18
+  },
+  {
+    "id": "career_fair",
+    "source": "email",
+    "sender": "careers@gtlstate.example",
+    "subject": "Fall Career Fair is next week",
+    "body": "Over 120 employers will be at the Fall Career Fair in the Campus Rec Center next Wednesday from 10 AM to 3 PM. Bring copies of your resume. Business casual recommended.",
+    "received_at_offset_hours": -14
+  },
+  {
+    "id": "promo_pizza",
+    "source": "email",
+    "sender": "hello@slicehouse.example",
+    "subject": "2-for-1 pizza tonight only",
+    "body": "Study break? Get two large pizzas for the price of one tonight with code STUDY2. Delivery to all campus dorms.",
+    "received_at_offset_hours": -12
+  },
+  {
+    "id": "ta_timesheet",
+    "source": "email",
+    "sender": "payroll@gtlstate.example",
+    "subject": "Action needed: submit your TA timesheet",
+    "body": "Hi Jordan,\n\nYour teaching assistant timesheet for the current pay period (estimated pay: $380) has not been submitted. Timesheets must be submitted and approved in the payroll portal by {{day:+3@17:00}}. Hours not submitted by the deadline will not be paid this pay period.\n\nUniversity Payroll",
+    "received_at_offset_hours": -8
+  },
+  {
+    "id": "student_gov",
+    "source": "email",
+    "sender": "sga@gtlstate.example",
+    "subject": "SGA minutes and upcoming town hall",
+    "body": "Minutes from this week's Student Government meeting are posted. Our next town hall on campus parking is Monday at 6 PM in the Union Ballroom. Come share your thoughts!",
     "received_at_offset_hours": -6
+  },
+  {
+    "id": "music_weekly",
+    "source": "email",
+    "sender": "no-reply@tunestream.example",
+    "subject": "Your weekly mix is ready",
+    "body": "We made a new mix based on what you've been listening to: 30 songs, 1 hr 52 min. Press play.",
+    "received_at_offset_hours": -4
+  },
+  {
+    "id": "bank_tip",
+    "source": "bank",
+    "sender": "insights@northgatebank.example",
+    "subject": "Money tip: round up your purchases",
+    "body": "Did you know you can round up every card purchase and save the change? Turn on Round-Ups in the Northgate app to start saving automatically.",
+    "received_at_offset_hours": -3
+  },
+  {
+    "id": "card_reminder",
+    "source": "bank",
+    "sender": "alerts@northgatebank.example",
+    "subject": "Reminder: your Northgate card payment is due soon",
+    "body": "Hi Jordan,\n\nThis is a reminder that your Northgate Student Card payment of at least $35.00 (statement balance $412.60) is due {{day:+1@23:59}}. Pay on time to avoid a late fee of up to $40.\n\nNorthgate Bank",
+    "received_at_offset_hours": -2
   }
 ]
