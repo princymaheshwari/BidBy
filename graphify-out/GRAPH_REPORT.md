@@ -1,17 +1,17 @@
 # Graph Report - BidBy  (2026-10-18)
 
 ## Corpus Check
-- 51 files · ~30,023 words
+- 52 files · ~36,661 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 5 file(s) not represented in the graph (top: (none) 4, .example 1)
 
 ## Summary
-- 447 nodes · 1193 edges · 23 communities (20 shown, 3 thin omitted)
+- 460 nodes · 1209 edges · 22 communities (19 shown, 3 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 12 edges (avg confidence: 0.91)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `77f94312`
+- Built from commit: `c37635ae`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -34,8 +34,7 @@
 - replies.ts
 - spectrum.ts
 - docs.ts
-- BidBy Credit
-- BidBy Money In
+- BidBy
 - BidBy Subscriptions
 - routes.ts
 - smoke.ts
@@ -58,16 +57,16 @@
 - `What you receive` --references--> `now()`  [INFERRED]
   openclaw/agents/coordinator/AGENTS.md → core/src/clock.ts
 - `What you receive` --references--> `now()`  [INFERRED]
-  openclaw/agents/credit/AGENTS.md → core/src/clock.ts
-- `What you receive` --references--> `now()`  [INFERRED]
-  openclaw/agents/money_in/AGENTS.md → core/src/clock.ts
-- `What you receive` --references--> `now()`  [INFERRED]
   openclaw/agents/subs/AGENTS.md → core/src/clock.ts
+- `What you receive` --references--> `now()`  [INFERRED]
+  openclaw/agents/credit/AGENTS.md → core/src/clock.ts
+- `Rules` --references--> `now()`  [INFERRED]
+  openclaw/agents/extractor/AGENTS.md → core/src/clock.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (23 total, 3 thin omitted)
+## Communities (22 total, 3 thin omitted)
 
 ### Community 0 - "BidBy Aid"
 Cohesion: 0.33
@@ -78,8 +77,8 @@ Cohesion: 0.09
 Nodes (22): description, devDependencies, tsx, @types/node, typescript, engines, node, license (+14 more)
 
 ### Community 2 - "server.ts"
-Cohesion: 0.07
-Nodes (33): dependencies, @elevenlabs/elevenlabs-js, hono, @hono/node-server, spectrum-ts, zod, name, private (+25 more)
+Cohesion: 0.06
+Nodes (37): dependencies, @elevenlabs/elevenlabs-js, hono, @hono/node-server, spectrum-ts, zod, name, private (+29 more)
 
 ### Community 3 - "compilerOptions"
 Cohesion: 0.12
@@ -91,11 +90,11 @@ Nodes (6): Emergency grant, Financial aid appeal (special circumstances), GT-lik
 
 ### Community 5 - "Jordan Rivera"
 Cohesion: 0.33
-Nodes (5): Activities, Experience, Jordan Rivera, Projects, Skills
+Nodes (5): Activities, Experience, Princy Maheshwari, Projects, Skills
 
 ### Community 9 - "routes.ts"
-Cohesion: 0.09
-Nodes (33): RECOVERY_AFTER_MINUTES, RING_TIMEOUT_MS, alreadyFinished(), answering, CallResult, checkCalls(), completeMockCall(), failureReason (+25 more)
+Cohesion: 0.07
+Nodes (66): RECOVERY_AFTER_MINUTES, RING_TIMEOUT_MS, maybeEscalate(), emit(), latestHeadStart(), dismiss(), DoneVia, fromRow() (+58 more)
 
 ### Community 10 - "tunnel.ts"
 Cohesion: 0.16
@@ -106,44 +105,40 @@ Cohesion: 0.42
 Nodes (7): die(), gateway_up(), load_workspaces(), read_token(), setup-openclaw.sh script, sync_agent(), workspace_dir()
 
 ### Community 12 - "rank.ts"
-Cohesion: 0.07
-Nodes (60): AgentId, callAgent(), ChatCompletion, elapsed(), requestToolCall(), AgentTool, answerUser, Domain (+52 more)
+Cohesion: 0.08
+Nodes (50): AgentId, callAgent(), ChatCompletion, elapsed(), requestToolCall(), AgentTool, answerUser, Domain (+42 more)
 
 ### Community 13 - "BidBy Coordinator"
 Cohesion: 0.33
 Nodes (5): BidBy Coordinator, Never, Rules, What you must do, What you receive
 
 ### Community 14 - "timer.ts"
-Cohesion: 0.11
-Nodes (29): CALL_MAX_HOURS_LEFT, CALL_SCORE, DEFAULT_SNOOZE_MINUTES, DIGEST_HOUR, Env, envPath, INTERRUPT_SCORE, MAX_FOLLOW_UPS (+21 more)
+Cohesion: 0.10
+Nodes (33): CALL_COOLDOWN_MINUTES, CALL_MAX_HOURS_LEFT, CALL_SCORE, DIGEST_HOUR, Env, envPath, INTERRUPT_SCORE, MAX_FOLLOW_UPS (+25 more)
 
 ### Community 15 - "replies.ts"
-Cohesion: 0.09
-Nodes (55): followUp(), maybeEscalate(), notifyTop(), wakeSnoozed(), callClosingText(), checklistText(), digestText(), DOMAIN_COPY (+47 more)
+Cohesion: 0.13
+Nodes (29): DEFAULT_SNOOZE_MINUTES, callClosingText(), checklistText(), digestText(), DOMAIN_COPY, due(), followUpText(), headStartChecklistText() (+21 more)
 
 ### Community 16 - "spectrum.ts"
-Cohesion: 0.20
-Nodes (13): SEND_GAP_MS, App, connect(), digits(), getUserSpace(), listen(), mask(), paced() (+5 more)
+Cohesion: 0.13
+Nodes (19): SEND_GAP_MS, db, BidbyEvent, eventsStream(), Listener, listeners, recentEvents(), App (+11 more)
 
 ### Community 17 - "docs.ts"
 Cohesion: 0.40
 Nodes (8): basename(), covers(), docStatus(), keepExisting(), missingDocs(), STOP, files, tokens()
 
-### Community 18 - "BidBy Credit"
-Cohesion: 0.40
-Nodes (4): BidBy Credit, Never, Rules, What you receive
-
-### Community 19 - "BidBy Money In"
-Cohesion: 0.40
-Nodes (4): BidBy Money In, Never, Rules, What you receive
+### Community 18 - "BidBy"
+Cohesion: 0.29
+Nodes (6): BidBy, Features, How it's built, The BidBy voice agent (ElevenLabs), The problem, What BidBy does
 
 ### Community 20 - "BidBy Subscriptions"
 Cohesion: 0.40
 Nodes (4): BidBy Subscriptions, Never, Rules, What you receive
 
 ### Community 23 - "routes.ts"
-Cohesion: 0.08
-Nodes (39): advance(), hoursUntil(), setTo(), CALL_COOLDOWN_MINUTES, Config, callColumns, clearAll(), DATA_TABLES (+31 more)
+Cohesion: 0.06
+Nodes (42): advance(), hoursUntil(), now(), setTo(), callColumns, clearAll(), DATA_TABLES, getSettings() (+34 more)
 
 ### Community 25 - "smoke.ts"
 Cohesion: 0.21
@@ -151,23 +146,23 @@ Nodes (15): after(), api(), BidbyEvent, check(), event(), events, followEvents()
 
 ## Knowledge Gaps
 - **3 isolated node(s):** `@types/node`, `tsx`, `typescript`
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 181 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 191 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **3 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `now()` connect `rank.ts` to `BidBy Aid`, `server.ts`, `routes.ts`, `BidBy Coordinator`, `timer.ts`, `replies.ts`, `spectrum.ts`, `BidBy Credit`, `BidBy Money In`, `BidBy Subscriptions`, `routes.ts`?**
-  _High betweenness centrality (0.141) - this node is a cross-community bridge._
+- **Why does `now()` connect `routes.ts` to `BidBy Aid`, `server.ts`, `routes.ts`, `rank.ts`, `BidBy Coordinator`, `timer.ts`, `replies.ts`, `spectrum.ts`, `BidBy Subscriptions`?**
+  _High betweenness centrality (0.136) - this node is a cross-community bridge._
 - **Are the 7 inferred relationships involving `now()` (e.g. with `What you receive` and `What you receive`) actually correct?**
   _`now()` has 7 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `@types/node`, `tsx`, `typescript` to the rest of the system?**
   _3 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `package.json` be split into smaller, more focused modules?**
   _Cohesion score 0.08695652173913043 - nodes in this community are weakly interconnected._
-- **Why does `emit()` connect `rank.ts` to `server.ts`, `routes.ts`, `replies.ts`, `spectrum.ts`, `routes.ts`?**
+- **Why does `emit()` connect `routes.ts` to `server.ts`, `rank.ts`, `replies.ts`, `spectrum.ts`, `routes.ts`?**
   _High betweenness centrality (0.019) - this node is a cross-community bridge._
 - **Should `server.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.06585365853658537 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.0595959595959596 - nodes in this community are weakly interconnected._
 - **Should `compilerOptions` be split into smaller, more focused modules?**
   _Cohesion score 0.11764705882352941 - nodes in this community are weakly interconnected._

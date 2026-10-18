@@ -9,17 +9,18 @@ import { config } from "./config.js";
 import { clearAll, db, getSettings, newId } from "./db.js";
 import { startTimer, tick } from "./escalation/timer.js";
 import { emit, eventsStream } from "./events.js";
-import { findFixture, loadHeld, loadInbox, renderFixture } from "./fixtures.js";
+import { findFixture, loadHeld, loadInbox, renderFixture, type Fixture } from "./fixtures.js";
 import { handleReply } from "./messaging/replies.js";
 import { startSpectrum } from "./messaging/spectrum.js";
 import { ingest } from "./pipeline/ingest.js";
-import { dismiss, getObligation, getOpen, listObligations, markDone, protectedTotal, snooze } from "./pipeline/ledger.js";
+import { dismiss, getMessages, getObligation, getOpen, listObligations, markDone, protectedTotal, snooze } from "./pipeline/ledger.js";
 import { latestDecision, latestScores, rank } from "./pipeline/rank.js";
 import { completeMockCall } from "./voice/calls.js";
 import { startCall } from "./voice/elevenlabs.js";
 import { tunnelGuard, voice } from "./voice/routes.js";
 
 const INDEX_HTML = resolve(import.meta.dirname, "../public/index.html");
+const INTAKE_HTML = resolve(import.meta.dirname, "../public/intake.html");
 const HOUR_MS = 3_600_000;
 const DEFAULT_SNOOZE_HOURS = 2;
 
@@ -35,13 +36,14 @@ app.onError((err, c) => {
 
 // Read on each request so edits to the page show up without a restart.
 app.get("/", (c) => c.html(readFileSync(INDEX_HTML, "utf8")));
+app.get("/intake", (c) => c.html(readFileSync(INTAKE_HTML, "utf8")));
 
 app.get("/api/events", (c) => eventsStream(c));
 
 // --- ingest + ledger ---
 
 const IngestBody = z.object({
-  source: z.enum(["email", "slack", "bank"]),
+  source: z.enum(["email", "slack", "bank", "calendar"]),
   sender: z.string(),
   subject: z.string(),
   body: z.string(),
@@ -101,8 +103,11 @@ app.post("/api/demo/clock", async (c) => {
 });
 
 let resetting = false;
+const RESET_CONCURRENCY = 8; // extractor sessions in flight at once during a reset
 
-// Clears state, ingests the seeded inbox in received order (every received_at is in the past), then ranks once.
+// Clears state, ingests the seeded inbox (every received_at is in the past), then ranks once.
+// Senders run in parallel; one sender's messages stay in received order, so a reminder sees the
+// statement it merges into.
 app.post("/api/demo/reset", async (c) => {
   if (resetting) return c.json({ error: "a reset is already running" }, 409);
   resetting = true;
@@ -111,13 +116,28 @@ app.post("/api/demo/reset", async (c) => {
     emit("demo.reset", { now: now().toISOString() });
     const base = now();
     const inbox = loadInbox().sort((a, b) => a.received_at_offset_hours - b.received_at_offset_hours);
-    for (const f of inbox) await ingest(renderFixture(f, base), { fixture_id: f.id, rank: false });
+    const bySender = new Map<string, Fixture[]>();
+    for (const f of inbox) bySender.set(f.sender, [...(bySender.get(f.sender) ?? []), f]);
+    const queue = [...bySender.values()];
+    await Promise.all(Array.from({ length: RESET_CONCURRENCY }, async () => {
+      for (let group = queue.shift(); group; group = queue.shift()) {
+        for (const f of group) await ingest(renderFixture(f, base), { fixture_id: f.id, rank: false });
+      }
+    }));
     emit("demo.seeded", { messages: inbox.length, open_obligations: getOpen().length });
     await rank();
     return c.json({ ok: true });
   } finally {
     resetting = false;
   }
+});
+
+// Empties the ledger without reading the inbox: the intake page's "before" state (demo act 1).
+app.post("/api/demo/clear", (c) => {
+  if (resetting) return c.json({ error: "a reset is already running" }, 409);
+  clearAll();
+  emit("demo.reset", { now: now().toISOString(), cleared: true });
+  return c.json({ ok: true });
 });
 
 const InjectBody = z.object({ fixture_id: z.string() });
@@ -156,6 +176,57 @@ app.get("/api/demo/state", (c) => {
     messaging_mode: config.MESSAGING_MODE,
     held: loadHeld().map((f) => ({ id: f.id, subject: f.subject, injected: injected.has(f.id) })),
   });
+});
+
+type IntakeStatus = "waiting" | "reading" | "noise" | "flagged" | "unprocessed" | "obligation" | "merged" | "confirmation" | "no_action";
+const BID_AGENTS = ["aid", "credit", "subs", "money_in"] as const;
+
+/**
+ * Intake page state since the last reset: every inbox message (stored ones, plus seeded fixtures not read yet),
+ * what the extractor made of each, and each domain agent's bidding state. Derived from events.
+ */
+app.get("/api/demo/intake", (c) => {
+  const reset = db.prepare("SELECT rowid, payload FROM events WHERE type = 'demo.reset' ORDER BY rowid DESC LIMIT 1").get() as
+    { rowid: number; payload: string } | undefined;
+  const base = reset ? new Date(JSON.parse(reset.payload).now) : now();
+  const events = (db.prepare("SELECT type, payload FROM events WHERE rowid > ? ORDER BY rowid").all(reset?.rowid ?? 0) as
+    { type: string; payload: string }[]).map((e) => ({ type: e.type, p: JSON.parse(e.payload) }));
+
+  type Read = { fixture_id: string | null; status: IntakeStatus; obligation_ids: string[] };
+  const read = new Map<string, Read>();
+  const agents: Record<string, "idle" | "bidding" | "bid" | "failed"> = Object.fromEntries(BID_AGENTS.map((a) => [a, "idle"]));
+  let seeded = false, ranked = false;
+  for (const { type, p } of events) {
+    const r = read.get(p.raw_message_id);
+    switch (type) {
+      case "message.received": read.set(p.raw_message_id, { fixture_id: p.fixture_id ?? null, status: "reading", obligation_ids: [] }); break;
+      case "message.noise": if (r) r.status = "noise"; break;
+      case "message.flagged": if (r) r.status = "flagged"; break;
+      case "message.unprocessed": if (r) r.status = "unprocessed"; break;
+      case "obligation.created": if (r) r.obligation_ids.push(p.id); break;
+      case "obligation.updated": if (r) { r.obligation_ids.push(p.id); r.status = "merged"; } break;
+      case "message.extracted":
+        if (r && r.status !== "merged") {
+          r.status = p.obligation_ids.length ? "obligation" : p.completed_ids.length ? "confirmation" : "no_action";
+        }
+        break;
+      case "agent.called": if (p.tool === "submit_bids" && p.agent_id in agents) agents[p.agent_id] = "bidding"; break;
+      case "agent.returned": if (p.tool === "submit_bids" && p.ok && p.agent_id in agents) agents[p.agent_id] = "bid"; break;
+      case "agent.failed": if (p.tool === "submit_bids" && p.agent_id in agents) agents[p.agent_id] = "failed"; break;
+      case "demo.seeded": seeded = true; break;
+      case "decision.made": ranked = true; break;
+    }
+  }
+
+  const stored = getMessages([...read.keys()]).map((m) => ({ ...m, raw_message_id: m.id, ...read.get(m.id)! }));
+  const readFixtures = new Set(stored.map((m) => m.fixture_id));
+  const waiting = loadInbox().filter((f) => !readFixtures.has(f.id)).map((f) => ({
+    ...renderFixture(f, base), raw_message_id: null, fixture_id: f.id, status: "waiting" as IntakeStatus, obligation_ids: [],
+  }));
+  const messages = [...stored.map(({ id: _id, ...m }) => m), ...waiting]
+    .sort((a, b) => Date.parse(b.received_at) - Date.parse(a.received_at));
+  const phase = read.size === 0 ? "inbox" : !seeded && resetting ? "reading" : !ranked && resetting ? "bidding" : "ranked";
+  return c.json({ base: base.toISOString(), running: resetting, phase, messages, agents });
 });
 
 const ReplyBody = z.object({ text: z.string().min(1) });

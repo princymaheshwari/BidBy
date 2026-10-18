@@ -9,7 +9,7 @@ import { REPO_ROOT } from "./config.js";
 
 export const Fixture = z.object({
   id: z.string(),
-  source: z.enum(["email", "slack", "bank"]),
+  source: z.enum(["email", "slack", "bank", "calendar"]),
   sender: z.string(),
   subject: z.string(),
   body: z.string(),

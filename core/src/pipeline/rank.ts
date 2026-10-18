@@ -5,7 +5,7 @@ import { explainDecision, submitBids, type Domain, type SubmitBids } from "../ag
 import { formatNY, now } from "../clock.js";
 import { db, newId } from "../db.js";
 import { emit } from "../events.js";
-import { listObligations, type Obligation } from "./ledger.js";
+import { getMessages, listObligations, type Obligation } from "./ledger.js";
 import { hoursLeft, rankByScore } from "./score.js";
 
 export interface Decision {
@@ -99,6 +99,9 @@ async function collectBids(domain: Domain, obs: Obligation[], at: Date): Promise
       id: o.id, title: o.title, amount_at_risk_usd: o.amount_at_risk_usd, deadline_at: o.deadline_at,
       hours_left: round2(hoursLeft(o.deadline_at, at)), consequence: o.consequence,
       required_action: o.required_action, required_docs: o.required_docs,
+      // The original messages, so the agent bids on what was actually said, not only the extractor's summary.
+      source_messages: getMessages(o.source_message_ids).map(({ source, sender, subject, body, received_at }) =>
+        ({ source, sender, subject, body, received_at })),
     })),
   };
   const prompt =

@@ -40,6 +40,22 @@ export function getObligation(id: string): Obligation | undefined {
   return row && fromRow(row);
 }
 
+export interface RawMessage {
+  id: string;
+  source: "email" | "slack" | "bank" | "calendar";
+  sender: string;
+  subject: string;
+  body: string;
+  received_at: string;
+}
+
+/** The stored messages with these ids, in received order (an obligation's sources). */
+export function getMessages(ids: string[]): RawMessage[] {
+  if (ids.length === 0) return [];
+  return db.prepare(`SELECT * FROM raw_messages WHERE id IN (${ids.map(() => "?").join(", ")}) ORDER BY received_at`)
+    .all(...ids) as unknown as RawMessage[];
+}
+
 /** Every obligation: unfinished first, each group by deadline. */
 export function listObligations(): Obligation[] {
   const rows = db.prepare(

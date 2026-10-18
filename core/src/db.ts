@@ -11,7 +11,7 @@ db.exec("PRAGMA journal_mode = WAL;");
 db.exec(`
 CREATE TABLE IF NOT EXISTS raw_messages (
   id          TEXT PRIMARY KEY,
-  source      TEXT NOT NULL CHECK (source IN ('email', 'slack', 'bank')),
+  source      TEXT NOT NULL CHECK (source IN ('email', 'slack', 'bank', 'calendar')),
   sender      TEXT NOT NULL,
   subject     TEXT NOT NULL,
   body        TEXT NOT NULL,
@@ -126,6 +126,32 @@ if (!outboundSql.includes("'reply'")) {
         SELECT id, obligation_id, kind, body, sent_at FROM outbound_texts ORDER BY rowid;
       DROP TABLE outbound_texts;
       ALTER TABLE outbound_texts_new RENAME TO outbound_texts;
+    `);
+    db.exec("COMMIT");
+  } catch (err) {
+    db.exec("ROLLBACK");
+    throw err;
+  }
+}
+
+// The demo inbox added source 'calendar' (calendar notifications). Same CHECK rebuild as above.
+const rawSql = (db.prepare("SELECT sql FROM sqlite_master WHERE name = 'raw_messages'").get() as { sql: string }).sql;
+if (!rawSql.includes("'calendar'")) {
+  db.exec("BEGIN");
+  try {
+    db.exec(`
+      CREATE TABLE raw_messages_new (
+        id          TEXT PRIMARY KEY,
+        source      TEXT NOT NULL CHECK (source IN ('email', 'slack', 'bank', 'calendar')),
+        sender      TEXT NOT NULL,
+        subject     TEXT NOT NULL,
+        body        TEXT NOT NULL,
+        received_at TEXT NOT NULL
+      );
+      INSERT INTO raw_messages_new (id, source, sender, subject, body, received_at)
+        SELECT id, source, sender, subject, body, received_at FROM raw_messages ORDER BY rowid;
+      DROP TABLE raw_messages;
+      ALTER TABLE raw_messages_new RENAME TO raw_messages;
     `);
     db.exec("COMMIT");
   } catch (err) {

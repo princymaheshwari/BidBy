@@ -28,6 +28,9 @@
     .clock .time { font-size: 30px; font-weight: 700; color: #fff; letter-spacing: -.5px; }
     .clock .date { font-size: 13px; color: #94a3b8; }
     .clock .date em { font-style: normal; color: #fbbf24; }
+    .tabs { display: flex; background: #111c33; border: 1px solid #334155; border-radius: 9px; padding: 3px; }
+    .tabs a { color: #cbd5e1; text-decoration: none; padding: 7px 13px; border-radius: 6px; font-weight: 600; font-size: 14px; }
+    .tabs a.on { background: #f1f5f9; color: var(--top); }
     .controls { display: flex; gap: 8px; flex-wrap: wrap; flex: 1; }
     .controls button { background: #1e293b; color: #f1f5f9; border: 1px solid #334155; border-radius: 8px; padding: 9px 13px; font-weight: 600; }
     .controls button:hover:not(:disabled) { background: #273449; }
@@ -118,6 +121,7 @@
   <header>
     <div class="brand"><b>BidBy</b><span>money at risk, ranked</span></div>
     <div class="clock"><span class="time num" id="clockTime">--:--</span><span class="date" id="clockDate">demo clock</span></div>
+    <nav class="tabs"><a href="/intake">Intake</a><a class="on" href="/">Bids &amp; ledger</a></nav>
     <div class="controls">
       <span class="inject"><button class="primary" id="btnInject">Inject next</button><select id="selHeld" title="Choose what to inject"></select></span>
       <button id="btnAdvance">Advance 1 h</button>
@@ -364,6 +368,7 @@
       "message.received": (p) => ["", `📥 ${p.source} from ${p.sender}: ${truncate(p.subject, 80)}`],
       "message.noise": (p) => ["dim", `Ignored (no money at stake): ${truncate(p.subject, 70)}`],
       "message.flagged": (p) => ["warn", `⚠ Suspicious, not acted on: ${truncate(p.subject, 70)}`],
+      "message.extracted": () => null,
       "message.unprocessed": (p) => ["warn", `Couldn't read: ${truncate(p.subject, 70)}`],
       "obligation.created": (p) => ["good", `➕ Ledger: ${p.title} · ${money(p.amount_at_risk_usd)}`],
       "obligation.updated": (p) => ["", `✎ Updated ${p.title} (${(p.changed ?? []).join(", ")})`],

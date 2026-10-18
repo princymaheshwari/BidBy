@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>BidBy · Intake</title>
+  <style>
+    /* Intake view (demo act 1 and 2): the raw notifications, what the extractor made of each, and the
+       domain agents that spin up with a full brief. Every value comes from the API. */
+    :root {
+      --bg: #eef1f5; --panel: #ffffff; --ink: #0f172a; --ink2: #475569; --ink3: #94a3b8; --line: #e2e8f0;
+      --top: #0b1324; --top-ink: #e2e8f0; --accent: #2563eb; --good: #059669; --warn: #d97706; --bad: #dc2626;
+      --aid: #4f46e5; --credit: #e11d48; --subs: #d97706; --money_in: #059669; --ledger: #64748b;
+      --slack: #4a154b; --cal: #1a73e8; --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body { background: var(--bg); color: var(--ink); font: 15px/1.35 Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+      display: flex; flex-direction: column; overflow: hidden; }
+    button { font: inherit; cursor: pointer; }
+    .num { font-variant-numeric: tabular-nums; }
+    .mono { font-family: var(--mono); font-size: 12px; }
+
+    /* --- top bar (matches the judge view) --- */
+    header { background: var(--top); color: var(--top-ink); display: flex; align-items: center; gap: 22px; padding: 10px 20px; flex: none; }
+    .brand { display: flex; flex-direction: column; min-width: 150px; }
+    .brand b { font-size: 24px; letter-spacing: -.3px; color: #fff; }
+    .brand span { font-size: 12px; color: #94a3b8; }
+    .clock { display: flex; flex-direction: column; min-width: 210px; }
+    .clock .time { font-size: 30px; font-weight: 700; color: #fff; letter-spacing: -.5px; }
+    .clock .date { font-size: 13px; color: #94a3b8; }
+    .tabs { display: flex; background: #111c33; border: 1px solid #334155; border-radius: 9px; padding: 3px; }
+    .tabs a { color: #cbd5e1; text-decoration: none; padding: 7px 13px; border-radius: 6px; font-weight: 600; font-size: 14px; }
+    .tabs a.on { background: #f1f5f9; color: var(--top); }
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; flex: 1; }
+    .controls button { background: #1e293b; color: #f1f5f9; border: 1px solid #334155; border-radius: 8px; padding: 9px 13px; font-weight: 600; }
+    .controls button:hover:not(:disabled) { background: #273449; }
+    .controls button.primary { background: var(--accent); border-color: var(--accent); }
+    .controls button:disabled { opacity: .45; cursor: default; }
+    .modes { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; font-size: 12px; color: #94a3b8; }
+    .pill { border: 1px solid #334155; border-radius: 99px; padding: 2px 8px; }
+    .pill.live::before { content: "●"; color: #22c55e; margin-right: 5px; }
+    .pill.off::before { content: "●"; color: #ef4444; margin-right: 5px; }
+    #busy { font-size: 13px; color: #fbbf24; min-height: 1em; }
+
+    /* --- columns --- */
+    main { flex: 1; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .85fr) minmax(0, 1.25fr); gap: 14px; padding: 14px; min-height: 0; }
+    .col { display: flex; flex-direction: column; gap: 14px; min-height: 0; min-width: 0; }
+    section { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; display: flex; flex-direction: column; min-height: 0; }
+    section.grow { flex: 1; }
+    section > h2 { margin: 0; padding: 12px 16px 10px; font-size: 13px; text-transform: uppercase; letter-spacing: .8px; color: var(--ink2);
+      border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+    section > h2 small { text-transform: none; letter-spacing: 0; color: var(--ink3); font-weight: 500; }
+    .scroll { overflow-y: auto; flex: 1; }
+    .empty { color: var(--ink3); text-align: center; padding: 30px 10px; }
+
+    /* --- message rows (Gmail, Slack, Calendar) --- */
+    .msg { position: relative; padding: 9px 14px 9px 14px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: opacity .4s, background .4s; }
+    .msg:hover { background: #f8fafc; }
+    .msg.arrive { animation: arrive .45s ease-out; }
+    @keyframes arrive { from { opacity: 0; transform: translateY(-10px); background: #fef9c3; } to { opacity: 1; transform: none; } }
+    .msg .r1 { display: flex; gap: 8px; align-items: baseline; }
+    .msg .who { font-weight: 700; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .msg .when { color: var(--ink3); font-size: 12.5px; flex: none; }
+    .msg .subj { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .msg .snip { font-size: 13px; color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #slack .snip, #calendar .snip { white-space: normal; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+    .msg.open .snip { white-space: pre-wrap; overflow: visible; display: block; }
+    .msg .stamp { margin-top: 5px; min-height: 0; }
+    .msg.noise { opacity: .42; }
+    .msg.noise:hover { opacity: .8; }
+    .msg.money { background: #fffdf5; }
+    .msg.flagged { background: #fef2f2; }
+    .ico { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; font-size: 12px;
+      flex: none; color: #fff; font-weight: 800; align-self: center; }
+    .ico.email { background: #ea4335; } .ico.bank { background: #0f766e; } .ico.slack { background: var(--slack); } .ico.calendar { background: var(--cal); }
+    .chan { color: var(--slack); font-weight: 700; font-size: 12.5px; }
+    .mention { background: #fef3c7; color: #92400e; border-radius: 4px; padding: 0 3px; font-weight: 700; }
+
+    .badge { display: inline-flex; align-items: center; gap: 5px; border-radius: 99px; padding: 2px 9px; font-size: 12px; font-weight: 700;
+      background: #f1f5f9; color: var(--ink2); }
+    .badge.reading { background: #dbeafe; color: #1d4ed8; }
+    .badge.reading::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #2563eb; animation: pulse 1s infinite; }
+    .badge.queued { background: transparent; color: var(--ink3); font-weight: 600; padding-left: 0; }
+    .badge.flag { background: #fee2e2; color: #991b1b; }
+    .badge.dom { color: #fff; }
+    .badge.stampin { animation: stampin .35s ease-out; }
+    @keyframes stampin { from { transform: scale(1.35); opacity: 0; } to { transform: none; opacity: 1; } }
+    @keyframes pulse { 50% { opacity: .25; } }
+
+    .cta { margin: 26px auto; display: block; background: var(--accent); color: #fff; border: 0; border-radius: 10px; padding: 12px 20px; font-weight: 700; font-size: 16px; }
+
+    /* --- OpenClaw column --- */
+    .extractor { padding: 12px 14px; border-bottom: 1px solid var(--line); display: grid; gap: 8px; }
+    .extractor .head { display: flex; align-items: center; gap: 8px; }
+    .extractor .head b { font-size: 15px; }
+    .sessions { display: flex; gap: 4px; margin-left: auto; }
+    .sessions i { width: 10px; height: 10px; border-radius: 3px; background: #e2e8f0; }
+    .sessions i.on { background: #2563eb; animation: pulse 1s infinite; }
+    .tally { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .tally > div { background: #f8fafc; border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
+    .tally .v { font-size: 20px; font-weight: 800; }
+    .tally .k { font-size: 11px; color: var(--ink2); text-transform: uppercase; letter-spacing: .5px; }
+    .tally .money .v { color: var(--bad); }
+    .found { font-size: 14px; color: var(--ink2); }
+    .found b { color: var(--ink); }
+
+    .agents { padding: 12px 14px; display: grid; gap: 12px; }
+    .agent { border: 1px solid var(--line); border-top: 4px solid var(--ledger); border-radius: 10px; overflow: hidden; }
+    .agent.spawn { animation: spawn .6s ease-out; }
+    @keyframes spawn { 0% { opacity: 0; transform: scale(.94); box-shadow: 0 0 0 6px rgba(37, 99, 235, .35); } 100% { opacity: 1; transform: none; box-shadow: none; } }
+    .agent .ah { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #f8fafc; border-bottom: 1px solid var(--line); }
+    .agent .ah b { font-size: 15px; }
+    .agent .ah .mono { color: var(--ink2); }
+    .agent .ah .total { margin-left: auto; font-weight: 800; font-size: 16px; }
+    .state { border-radius: 99px; padding: 1px 8px; font-size: 11.5px; font-weight: 700; background: #e2e8f0; color: var(--ink2); }
+    .state.bidding { background: #dbeafe; color: #1d4ed8; animation: pulse 1s infinite; }
+    .state.bid { background: #d1fae5; color: #065f46; }
+    .state.failed { background: #fee2e2; color: #991b1b; }
+
+    .brief { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; }
+    .brief:last-child { border-bottom: 0; }
+    .brief.newb { animation: arrive .5s ease-out; }
+    .brief .r1 { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+    .brief .title { font-weight: 700; font-size: 15.5px; }
+    .brief .amt { font-weight: 800; font-size: 19px; }
+    .brief .src { display: flex; gap: 6px; align-items: center; font-size: 12.5px; color: var(--ink2); margin-top: 4px; }
+    .brief .src .ico { width: 18px; height: 18px; font-size: 10px; border-radius: 5px; }
+    .brief blockquote { margin: 6px 0 8px; padding: 6px 10px; border-left: 3px solid var(--line); background: #f8fafc; font-size: 13px; color: var(--ink2);
+      white-space: pre-wrap; max-height: 5.6em; overflow: hidden; border-radius: 0 6px 6px 0; }
+    .facts { display: grid; grid-template-columns: 92px 1fr; gap: 3px 10px; font-size: 13.5px; }
+    .facts dt { color: var(--ink3); font-size: 12px; text-transform: uppercase; letter-spacing: .5px; padding-top: 1px; }
+    .facts dd { margin: 0; }
+    .left { font-weight: 700; }
+    .left.urgent { color: var(--bad); }
+    .left.soon { color: var(--warn); }
+    .docs { display: flex; flex-wrap: wrap; gap: 4px; }
+    .docs span { background: #f1f5f9; border-radius: 6px; padding: 0 6px; font-size: 12.5px; }
+    .bidline { margin-top: 8px; padding: 6px 9px; border-radius: 8px; background: #eff6ff; border: 1px solid #bfdbfe; font-size: 13px; }
+    .bidline b { color: var(--accent); }
+    .bidline i { color: var(--ink2); }
+    .next { margin: 4px 14px 14px; display: none; text-align: center; background: var(--top); color: #fff; text-decoration: none; border-radius: 10px;
+      padding: 11px; font-weight: 700; }
+    .next.on { display: block; animation: arrive .5s ease-out; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand"><b>BidBy</b><span>money at risk, ranked</span></div>
+    <div class="clock"><span class="time num" id="clockTime">--:--</span><span class="date" id="clockDate">demo clock</span></div>
+    <nav class="tabs"><a class="on" href="/intake">Intake</a><a href="/">Bids &amp; ledger</a></nav>
+    <div class="controls">
+      <button id="btnClear">New demo</button>
+      <button id="btnPlay">▶ Notifications</button>
+      <button class="primary" id="btnRead">Hand it to OpenClaw</button>
+    </div>
+    <div class="modes">
+      <span class="pill off" id="conn">connecting</span>
+      <span id="busy"></span>
+    </div>
+  </header>
+
+  <main>
+    <div class="col">
+      <section class="grow">
+        <h2>Inbox <small id="mailCount"></small></h2>
+        <div class="scroll" id="mail"></div>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="grow">
+        <h2>Slack <small>GT-like State CS</small></h2>
+        <div class="scroll" id="slack"></div>
+      </section>
+      <section style="flex: .7">
+        <h2>Calendar notifications</h2>
+        <div class="scroll" id="calendar"></div>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="grow">
+        <h2>OpenClaw agents <small>running on this laptop · 127.0.0.1</small></h2>
+        <div class="extractor">
+          <div class="head"><b>Extractor</b><span class="mono">openclaw/extractor</span><span class="sessions" id="sessions"></span></div>
+          <div class="tally">
+            <div><div class="v num" id="tRead">0/0</div><div class="k">read</div></div>
+            <div><div class="v num" id="tNoise">0</div><div class="k">no money</div></div>
+            <div><div class="v num" id="tFlag">0</div><div class="k">suspicious</div></div>
+            <div class="money"><div class="v num" id="tMoney">0</div><div class="k">money items</div></div>
+          </div>
+          <div class="found" id="found"></div>
+        </div>
+        <div class="scroll"><div class="agents" id="agents"></div><a class="next" id="next" href="/">The agents have bid. See who wins your attention →</a></div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const NY = "America/New_York";
+    const DOMAINS = ["aid", "credit", "subs", "money_in"];
+    const DOMAIN_LABEL = { aid: "Aid", credit: "Credit", subs: "Subscriptions", money_in: "Money in" };
+    const SOURCE_ICON = { email: "✉", bank: "$", slack: "#", calendar: "31" };
+    const SOURCE_LABEL = { email: "Email", bank: "Bank alert", slack: "Slack", calendar: "Calendar" };
+    const AGENT_STATE = { idle: "briefed", bidding: "bidding…", bid: "bid submitted", failed: "no bid · ledger fallback" };
+    const ARRIVE_MS = 260; // act 1: one notification every 260 ms
+    const PARALLEL = 8;    // extractor sessions in flight during a reset (server RESET_CONCURRENCY)
+
+    let state = null;       // GET /api/demo/state (clock)
+    let stateAt = 0;
+    let intake = null;      // GET /api/demo/intake
+    let obligations = [];   // GET /api/obligations
+    let decision = null;    // GET /api/decisions/latest
+    let shown = null;       // keys of messages revealed in act 1; null = show everything
+    let playing = false;    // act 1 animation running
+    let loaded = false;
+
+    // --- formatting ---
+
+    const money = (v) => "$" + Number(v).toLocaleString("en-US", { minimumFractionDigits: Number.isInteger(v) ? 0 : 2, maximumFractionDigits: 2 });
+    const demoNow = () => state ? new Date(Date.parse(state.now) + (performance.now() - stateAt)) : new Date();
+    const fmt = (d, opts) => new Intl.DateTimeFormat("en-US", { timeZone: NY, ...opts }).format(d);
+    const timeNY = (d) => fmt(d, { hour: "numeric", minute: "2-digit" });
+    const dayNY = (d) => fmt(d, { year: "numeric", month: "2-digit", day: "2-digit" });
+    const when = (iso) => { const d = new Date(iso); return dayNY(d) === dayNY(demoNow()) ? timeNY(d) : fmt(d, { weekday: "short", hour: "numeric", minute: "2-digit" }); };
+
+    function left(deadlineIso) {
+      const ms = Date.parse(deadlineIso) - demoNow().getTime();
+      const abs = Math.abs(ms), h = Math.floor(abs / 3.6e6), m = Math.floor((abs % 3.6e6) / 6e4), d = Math.floor(h / 24);
+      const span = d >= 2 ? `${d}d ${h % 24}h` : h >= 1 ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;
+      if (ms < 0) return { text: `overdue ${span}`, cls: "urgent" };
+      return { text: `${span} left`, cls: ms < 12 * 3.6e6 ? "urgent" : ms < 48 * 3.6e6 ? "soon" : "" };
+    }
+
+    function el(tag, cls, text) {
+      const e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (text !== undefined) e.textContent = text;
+      return e;
+    }
+
+    /** "Dr. Maya Chen <mchen@...>" -> name; "Dana Okafor (#opportunities, ...)" -> name + channel. */
+    function who(sender) {
+      const slack = sender.match(/^(.*?) \((#[\w-]+)/);
+      if (slack) return { name: slack[1], channel: slack[2] };
+      const named = sender.match(/^(.*?)\s*<[^>]+>$/);
+      return { name: named ? named[1] : sender, channel: null };
+    }
+
+    /** Text with @mentions highlighted. */
+    function withMentions(text) {
+      const frag = document.createDocumentFragment();
+      for (const part of text.split(/(@\w+)/)) frag.append(part.startsWith("@") ? el("span", "mention", part) : document.createTextNode(part));
+      return frag;
+    }
+
+    /** Puts list in box in order, moving only nodes that are out of place (a moved node replays its animation). */
+    function syncChildren(box, list) {
+      list.forEach((node, i) => { if (box.children[i] !== node) box.insertBefore(node, box.children[i] ?? null); });
+      while (box.children.length > list.length) box.lastElementChild.remove();
+    }
+
+    /** Adds an entrance animation class that removes itself, so later moves don't replay it. */
+    function animate(node, cls) {
+      node.classList.add(cls);
+      node.addEventListener("animationend", () => node.classList.remove(cls), { once: true });
+      return node;
+    }
+
+    const keyOf = (m) => m.fixture_id ?? m.raw_message_id;
+    const obById = (id) => obligations.find((o) => o.id === id);
+
+    // --- data ---
+
+    async function getJSON(url) {
+      const r = await fetch(url, { cache: "no-store" });
+      if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
+      return r.json();
+    }
+
+    let fetchSeq = 0, appliedSeq = 0;
+    async function refresh() {
+      const seq = ++fetchSeq;
+      try {
+        const [s, i, o, d] = await Promise.all([getJSON("/api/demo/state"), getJSON("/api/demo/intake"), getJSON("/api/obligations"), getJSON("/api/decisions/latest")]);
+        if (seq < appliedSeq) return; // a newer refresh already landed
+        appliedSeq = seq;
+        state = s; stateAt = performance.now(); intake = i; obligations = o; decision = d;
+        // Opening the page on a fresh inbox (nothing read yet) waits for "▶ Notifications".
+        if (intake.phase !== "inbox") shown = null;
+        else if (!loaded) shown = new Set();
+        loaded = true;
+        render();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    let refreshTimer = null;
+    const refreshSoon = () => { clearTimeout(refreshTimer); refreshTimer = setTimeout(refresh, 150); };
+
+    // --- render ---
+
+    function render() {
+      renderClock();
+      renderMessages();
+      renderAgents();
+      renderControls();
+    }
+
+    function renderClock() {
+      const now = demoNow();
+      $("clockTime").textContent = timeNY(now);
+      $("clockDate").textContent = `${fmt(now, { weekday: "long", month: "short", day: "numeric" })} · New York`;
+    }
+
+    const rows = new Map(); // message key -> row element
+
+    function stampFor(m) {
+      switch (m.status) {
+        case "waiting": return intake.running ? ["badge queued", "queued for the extractor"] : null;
+        case "reading": return ["badge reading", "extractor reading…"];
+        case "noise": return ["badge", "no money at stake"];
+        case "no_action": return ["badge", "nothing to act on"];
+        case "flagged": return ["badge flag", "⚠ suspicious · not acted on"];
+        case "unprocessed": return ["badge flag", "couldn't read"];
+        case "confirmation": return ["badge dom", "✓ confirms an item", "good"];
+        case "merged": { const o = obById(m.obligation_ids[0]); return ["badge dom", `merged into “${o?.title ?? "item"}”`, o?.domain]; }
+        case "obligation": {
+          const o = obById(m.obligation_ids[0]);
+          return o ? ["badge dom", `${money(o.amount_at_risk_usd)} · ${DOMAIN_LABEL[o.domain]} agent`, o.domain] : ["badge reading", "extractor reading…"];
+        }
+      }
+      return null;
+    }
+
+    function renderMessages() {
+      const boxes = { email: $("mail"), bank: $("mail"), slack: $("slack"), calendar: $("calendar") };
+      const visible = intake.messages.filter((m) => !shown || shown.has(keyOf(m)));
+      const keys = new Set(visible.map(keyOf));
+      for (const [k, row] of rows) if (!keys.has(k)) { row.remove(); rows.delete(k); }
+
+      // intake.messages is newest first: insert in that order so each box reads newest on top.
+      const placed = { mail: [], slack: [], calendar: [] };
+      for (const m of visible) {
+        let row = rows.get(keyOf(m));
+        if (!row) {
+          row = el("div", "msg");
+          row.onclick = () => row.classList.toggle("open");
+          if (shown) animate(row, "arrive");
+          rows.set(keyOf(m), row);
+          buildRow(row, m);
+        }
+        const stamp = stampFor(m);
+        const sig = stamp ? stamp.join("|") : "";
+        if (row.dataset.sig !== sig) {
+          row.dataset.sig = sig;
+          const box = row.querySelector(".stamp");
+          box.replaceChildren();
+          if (stamp) {
+            const b = animate(el("span", stamp[0], stamp[1]), "stampin");
+            if (stamp[2]) b.style.background = `var(--${stamp[2]})`;
+            box.append(b);
+          }
+        }
+        row.classList.toggle("noise", ["noise", "no_action"].includes(m.status));
+        row.classList.toggle("money", ["obligation", "merged"].includes(m.status));
+        row.classList.toggle("flagged", m.status === "flagged");
+        placed[boxes[m.source].id].push(row);
+      }
+      for (const [id, list] of Object.entries(placed)) {
+        const box = $(id);
+        if (list.length) { syncChildren(box, list); continue; }
+        if (id === "mail" && shown && !playing) {
+          const cta = el("button", "cta", "▶ Notifications arrive");
+          cta.onclick = play;
+          box.replaceChildren(cta);
+        } else {
+          box.replaceChildren(el("div", "empty", shown ? "Waiting for notifications…" : "Nothing here."));
+        }
+      }
+      const mail = visible.filter((m) => m.source === "email" || m.source === "bank").length;
+      $("mailCount").textContent = mail ? `${mail} messages` : "";
+    }
+
+    function buildRow(row, m) {
+      const w = who(m.sender);
+      const r1 = el("div", "r1");
+      r1.append(el("span", `ico ${m.source}`, SOURCE_ICON[m.source]));
+      const name = el("span", "who", w.name);
+      r1.append(name, el("span", "when num", when(m.received_at)));
+      row.append(r1);
+      if (m.source === "slack") {
+        if (w.channel) name.append(" ", el("span", "chan", w.channel));
+        const body = el("div", "snip");
+        body.append(withMentions(m.body));
+        row.append(body);
+      } else if (m.source === "calendar") {
+        row.append(el("div", "subj", m.subject), el("div", "snip", m.body.split("\n").slice(1).join("\n").trim()));
+      } else {
+        row.append(el("div", "subj", m.subject), el("div", "snip", m.body.replace(/\s+/g, " ").trim()));
+      }
+      row.append(el("div", "stamp"));
+    }
+
+    const cards = new Map(); // domain -> card element
+
+    function renderAgents() {
+      const msgs = intake.messages.filter((m) => m.raw_message_id);
+      const read = msgs.filter((m) => !["waiting", "reading"].includes(m.status)).length;
+      const reading = msgs.filter((m) => m.status === "reading").length;
+      const total = intake.messages.length;
+      $("tRead").textContent = `${read}/${total}`;
+      $("tNoise").textContent = msgs.filter((m) => ["noise", "no_action"].includes(m.status)).length;
+      $("tFlag").textContent = msgs.filter((m) => m.status === "flagged").length;
+      $("tMoney").textContent = msgs.filter((m) => ["obligation", "merged"].includes(m.status)).length;
+      $("sessions").replaceChildren(...Array.from({ length: PARALLEL }, (_, i) => el("i", i < reading ? "on" : "")));
+
+      const open = obligations.filter((o) => !["done", "dismissed"].includes(o.status));
+      const atRisk = open.reduce((s, o) => s + o.amount_at_risk_usd, 0);
+      const found = $("found");
+      found.replaceChildren();
+      if (open.length) {
+        found.append("Found ", el("b", "num", money(Math.round(atRisk * 100) / 100)), ` at risk in ${open.length} item${open.length === 1 ? "" : "s"}, buried in ${total} notifications. Each goes to the agent that owns its domain.`);
+      } else if (intake.running) {
+        found.append(`Reading ${total} notifications, ${PARALLEL} at a time…`);
+      } else {
+        found.append("Nothing read yet.");
+      }
+
+      const box = $("agents");
+      for (const domain of DOMAINS) {
+        const mine = obligations.filter((o) => o.domain === domain);
+        let card = cards.get(domain);
+        if (!mine.length) { if (card) { card.remove(); cards.delete(domain); } continue; }
+        if (!card) {
+          card = animate(el("div", "agent"), "spawn");
+          card.style.borderTopColor = `var(--${domain})`;
+          card.dataset.domain = domain;
+          cards.set(domain, card);
+          const ah = el("div", "ah");
+          ah.append(el("b", "", `${DOMAIN_LABEL[domain]} agent`), el("span", "mono", `openclaw/${domain}`), el("span", "state"), el("span", "total num"));
+          card.append(ah, el("div", "briefs"));
+        }
+        const st = intake.agents[domain] ?? "idle";
+        const stEl = card.querySelector(".state");
+        stEl.className = `state ${st}`;
+        stEl.textContent = st === "idle" && intake.phase === "reading" ? "receiving briefs" : AGENT_STATE[st];
+        const live = mine.filter((o) => !["done", "dismissed"].includes(o.status));
+        card.querySelector(".total").textContent = money(Math.round(live.reduce((s, o) => s + o.amount_at_risk_usd, 0) * 100) / 100);
+        renderBriefs(card.querySelector(".briefs"), mine);
+      }
+      // Keep cards in domain order.
+      const order = DOMAINS.map((d) => cards.get(d)).filter(Boolean);
+      if (order.length) syncChildren(box, order);
+      else box.replaceChildren(el("div", "empty", intake.running ? "Agents spin up as the extractor finds money items." : "No agents yet."));
+
+      $("next").classList.toggle("on", Object.values(intake.agents).includes("bid") && !intake.running);
+    }
+
+    const briefs = new Map(); // obligation id -> brief element
+
+    function renderBriefs(box, mine) {
+      const els = mine.map((o) => {
+        let b = briefs.get(o.id);
+        if (!b) { b = animate(el("div", "brief"), "newb"); briefs.set(o.id, b); }
+        const bid = decision?.bids?.find((x) => x.obligation_id === o.id);
+        const sig = JSON.stringify([o, bid?.id]);
+        if (b.dataset.sig === sig) return b;
+        b.dataset.sig = sig;
+        b.replaceChildren();
+
+        const r1 = el("div", "r1");
+        r1.append(el("span", "title", o.title + (o.status === "done" ? " ✓" : "")), el("span", "amt num", money(o.amount_at_risk_usd)));
+        b.append(r1);
+
+        // Where it came from: every source message, the first one quoted.
+        const sources = intake.messages.filter((m) => m.raw_message_id && o.source_message_ids.includes(m.raw_message_id));
+        if (sources.length) {
+          const src = el("div", "src");
+          src.append(el("span", `ico ${sources[0].source}`, SOURCE_ICON[sources[0].source]),
+            document.createTextNode(`${SOURCE_LABEL[sources[0].source]} · ${who(sources[0].sender).name}${sources.length > 1 ? ` · +${sources.length - 1} more message${sources.length > 2 ? "s" : ""}` : ""}`));
+          const q = el("blockquote");
+          q.append(withMentions(sources[0].body.trim().replace(/\n\s*\n/g, "\n")));
+          b.append(src, q);
+        }
+
+        const facts = el("dl", "facts");
+        const fact = (k, v) => { const dd = el("dd"); dd.append(v); facts.append(el("dt", "", k), dd); };
+        const due = el("span");
+        due.append(fmt(new Date(o.deadline_at), { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }), " · ");
+        const l = el("span", "left num", "");
+        l.dataset.deadline = o.deadline_at;
+        due.append(l);
+        fact("Deadline", due);
+        fact("If missed", o.consequence);
+        fact("Next step", o.required_action);
+        if (o.required_docs.length) {
+          const docs = el("span", "docs");
+          docs.append(...o.required_docs.map((d) => el("span", "", d)));
+          fact("Needs", docs);
+        }
+        b.append(facts);
+
+        if (bid) {
+          const line = el("div", "bidline");
+          line.append(el("b", "num", `Bid ${money(bid.amount_at_risk_usd)}`), ` · ~${Math.round(bid.effort_minutes)} min · ${bid.reversible ? "reversible" : "irreversible"}${bid.blocks_other_aid ? " · blocks other aid" : ""} · `, el("i", "", `“${bid.argument}”`));
+          b.append(line);
+        }
+        return b;
+      });
+      for (const [id, b] of briefs) if (!mine.some((o) => o.id === id) && b.parentElement === box) briefs.delete(id);
+      syncChildren(box, els);
+      tickCountdowns();
+    }
+
+    function tickCountdowns() {
+      for (const l of document.querySelectorAll("[data-deadline]")) {
+        const v = left(l.dataset.deadline);
+        l.textContent = v.text;
+        l.className = `left num ${v.cls}`;
+      }
+    }
+
+    // --- act 1: notifications arrive ---
+
+    function play() {
+      if (!intake || playing) return;
+      playing = true;
+      shown = new Set();
+      rows.forEach((r) => r.remove());
+      rows.clear();
+      const order = [...intake.messages].reverse().map(keyOf); // oldest first, so the newest lands on top last
+      let i = 0;
+      const step = () => {
+        if (i >= order.length || !shown) { playing = false; renderControls(); return; }
+        shown.add(order[i++]);
+        renderMessages();
+        setTimeout(step, ARRIVE_MS);
+      };
+      renderControls();
+      step();
+    }
+
+    // --- controls ---
+
+    let busy = null;
+    function renderControls() {
+      const running = intake?.running;
+      $("btnClear").disabled = !!busy || running;
+      $("btnPlay").disabled = !!busy || running || playing || intake?.phase !== "inbox";
+      $("btnRead").disabled = !!busy || running || playing;
+      $("btnRead").textContent = running ? (intake.phase === "bidding" ? "Agents bidding…" : "OpenClaw reading…") : "Hand it to OpenClaw";
+      $("busy").textContent = busy ?? "";
+    }
+
+    async function post(url, label) {
+      busy = label;
+      renderControls();
+      try {
+        const r = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(data.error ?? `HTTP ${r.status}`);
+      } catch (err) {
+        busy = null;
+        $("busy").textContent = `${label}: ${err.message}`;
+        setTimeout(() => { if (!busy) $("busy").textContent = ""; }, 6000);
+      } finally {
+        busy = null;
+        refresh();
+      }
+    }
+
+    $("btnClear").onclick = () => {
+      if (confirm("Start a new demo? This clears the ledger and empties the inbox view.")) {
+        shown = new Set();
+        rows.forEach((r) => r.remove()); rows.clear();
+        cards.forEach((c) => c.remove()); cards.clear(); briefs.clear();
+        post("/api/demo/clear", "Clearing");
+      }
+    };
+    $("btnPlay").onclick = play;
+    $("btnRead").onclick = () => {
+      shown = null; // everything visible while the agents read
+      // The reset returns only after ranking; progress arrives over the event stream.
+      fetch("/api/demo/reset", { method: "POST" }).then(async (r) => {
+        if (!r.ok) $("busy").textContent = `Reset: ${(await r.json().catch(() => ({}))).error ?? `HTTP ${r.status}`}`;
+      }).catch((err) => { $("busy").textContent = `Reset: ${err.message}`; }).finally(refresh);
+      cards.forEach((c) => c.remove()); cards.clear(); briefs.clear();
+      setTimeout(refresh, 300);
+    };
+
+    // --- live updates ---
+
+    const source = new EventSource("/api/events");
+    source.onopen = () => { $("conn").textContent = "live"; $("conn").className = "pill live"; refresh(); };
+    source.onerror = () => { $("conn").textContent = "reconnecting"; $("conn").className = "pill off"; };
+    source.onmessage = (msg) => {
+      const e = JSON.parse(msg.data);
+      if (/^(message|obligation|agent|bid|decision|demo|clock)\./.test(e.type)) refreshSoon();
+    };
+
+    setInterval(() => { renderClock(); tickCountdowns(); }, 1000);
+    setInterval(refresh, 30_000);
+    refresh();
+  </script>
+</body>
+</html>

@@ -8,7 +8,7 @@ import { getObligation, getOpen, markDone, type Obligation } from "./ledger.js";
 import { rankSoon } from "./rank.js";
 
 export interface IncomingMessage {
-  source: "email" | "slack" | "bank";
+  source: "email" | "slack" | "bank" | "calendar";
   sender: string;
   subject: string;
   body: string;
@@ -68,6 +68,7 @@ export async function ingest(
   for (const id of extracted.completes) {
     if (openIds.has(id) && markDone(id, "confirmation")) result.completed_ids.push(id);
   }
+  emit("message.extracted", { raw_message_id, obligation_ids: result.obligation_ids, completed_ids: result.completed_ids });
   const changed = result.obligation_ids.length > 0 || result.completed_ids.length > 0;
   if (changed && opts.rank !== false) rankSoon();
   return result;
