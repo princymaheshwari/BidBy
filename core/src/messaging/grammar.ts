@@ -27,18 +27,42 @@ function due(item: Item, at: Date): string {
   return deadline.getTime() < at.getTime() ? `Overdue since ${when}` : `Due ${when}`;
 }
 
+/** Where each required document stands in the student's documents folder. */
+export interface DocsReport {
+  folder: string;
+  docs: { doc: string; file: string | null; blank: string | null }[];
+}
+
+const fileName = (path: string) => path.replace(/^.*[\/]/, "");
+
 /**
  * FAFSA verification: $3,700 in aid is on hold.
  * Due tonight 11:59 PM.
+ * Your documents are in C:\Users\you\Documents\Financial Aid\FAFSA 2026-27
+ * ✓ 2025 IRS Tax Return Transcript (2025 IRS Tax Return Transcript.pdf)
+ * ✗ 2026-27 Verification Worksheet (signed): only the blank form is there. Fill it in and sign it.
  * Reply 1 for a drafted email to the aid office, 2 for the document checklist.
  */
-export function interruptText(item: Item, at: Date): string {
+export function interruptText(item: Item, at: Date, docs?: DocsReport): string {
   const copy = DOMAIN_COPY[item.domain];
-  return [
-    `${item.title}: ${money(item.amount_at_risk_usd)} ${copy.risk}.`,
-    `${due(item, at)}.`,
-    `Reply 1 for ${copy.draft}, 2 for ${copy.checklist}.`,
-  ].join("\n");
+  const lines = [`${item.title}: ${money(item.amount_at_risk_usd)} ${copy.risk}.`, `${due(item, at)}.`];
+  if (docs?.docs.length) {
+    lines.push(`Your documents are in ${docs.folder}`);
+    for (const d of docs.docs) {
+      if (d.file) lines.push(`✓ ${d.doc} (${fileName(d.file)})`);
+      else if (d.blank) lines.push(`✗ ${d.doc}: only the blank form is there (${fileName(d.blank)}). Fill it in and sign it.`);
+      else lines.push(`✗ ${d.doc}: not in that folder yet.`);
+    }
+  }
+  lines.push(`Reply 1 for ${copy.draft}, 2 for ${copy.checklist}.`);
+  return lines.join("\n");
+}
+
+/** The line under a draft: how to send it, or why BidBy can't. */
+export function draftFooter(to: string | null, from: string | null, allowed: boolean): string {
+  if (to && allowed) return `Reply send and I'll email it to ${to}${from ? ` from ${from}` : ""}.`;
+  if (to) return `I'm not set up to email ${to}. Copy it into your email to send it.`;
+  return "Copy it into your email to send it.";
 }
 
 /** Shorter than the interrupt; also the reminder when a snooze runs out. */
@@ -101,6 +125,7 @@ export type Reply =
   | { action: "done" }
   | { action: "dismiss" }
   | { action: "status" }
+  | { action: "send" }
   | { action: "snooze"; when: string }
   | { action: "ask"; text: string };
 
@@ -111,6 +136,7 @@ export function parseReply(raw: string): Reply {
   if (t === "done") return { action: "done" };
   if (t === "dismiss") return { action: "dismiss" };
   if (t === "status") return { action: "status" };
+  if (["send", "send it", "yes", "yes send", "yes send it", "y"].includes(t.replace(/,/g, ""))) return { action: "send" };
   if (t === "later") return { action: "snooze", when: "" };
   const snooze = /^snooze\b ?(.*)$/.exec(t);
   if (snooze) return { action: "snooze", when: snooze[1] ?? "" };

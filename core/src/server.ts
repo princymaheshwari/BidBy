@@ -189,14 +189,18 @@ app.get("/api/demo/intake", (c) => {
   const reset = db.prepare("SELECT rowid, payload FROM events WHERE type = 'demo.reset' ORDER BY rowid DESC LIMIT 1").get() as
     { rowid: number; payload: string } | undefined;
   const base = reset ? new Date(JSON.parse(reset.payload).now) : now();
-  const events = (db.prepare("SELECT type, payload FROM events WHERE rowid > ? ORDER BY rowid").all(reset?.rowid ?? 0) as
-    { type: string; payload: string }[]).map((e) => ({ type: e.type, p: JSON.parse(e.payload) }));
+  const events = (db.prepare("SELECT type, payload, at FROM events WHERE rowid > ? ORDER BY rowid").all(reset?.rowid ?? 0) as
+    { type: string; payload: string; at: string }[]).map((e) => ({ type: e.type, p: JSON.parse(e.payload), at: e.at }));
+  const domainOf = new Map(listObligations().map((o) => [o.id, o.domain]));
 
   type Read = { fixture_id: string | null; status: IntakeStatus; obligation_ids: string[] };
   const read = new Map<string, Read>();
-  const agents: Record<string, "idle" | "bidding" | "bid" | "failed"> = Object.fromEntries(BID_AGENTS.map((a) => [a, "idle"]));
+  type AgentState = "idle" | "bidding" | "bid" | "failed" | "starting" | "texted";
+  const agents: Record<string, AgentState> = Object.fromEntries(BID_AGENTS.map((a) => [a, "idle"]));
+  // The iMessage thread and emails since the reset, for the page's phone panel.
+  const thread: { from: "bidby" | "you" | "email"; kind: string; text: string; at: string }[] = [];
   let seeded = false, ranked = false;
-  for (const { type, p } of events) {
+  for (const { type, p, at } of events) {
     const r = read.get(p.raw_message_id);
     switch (type) {
       case "message.received": read.set(p.raw_message_id, { fixture_id: p.fixture_id ?? null, status: "reading", obligation_ids: [] }); break;
@@ -210,9 +214,23 @@ app.get("/api/demo/intake", (c) => {
           r.status = p.obligation_ids.length ? "obligation" : p.completed_ids.length ? "confirmation" : "no_action";
         }
         break;
-      case "agent.called": if (p.tool === "submit_bids" && p.agent_id in agents) agents[p.agent_id] = "bidding"; break;
-      case "agent.returned": if (p.tool === "submit_bids" && p.ok && p.agent_id in agents) agents[p.agent_id] = "bid"; break;
-      case "agent.failed": if (p.tool === "submit_bids" && p.agent_id in agents) agents[p.agent_id] = "failed"; break;
+      case "agent.called":
+        // "texted" sticks: later ranking rounds don't hide that this agent's item reached the phone.
+        if (p.agent_id in agents && p.tool === "submit_bids" && agents[p.agent_id] !== "texted") agents[p.agent_id] = "bidding";
+        if (p.agent_id in agents && p.tool === "write_head_start") agents[p.agent_id] = "starting";
+        break;
+      case "text.sent": {
+        thread.push({ from: "bidby", kind: p.kind, text: p.body, at });
+        const d = domainOf.get(p.obligation_id);
+        if (p.kind === "interrupt" && d && d in agents) agents[d] = "texted";
+        break;
+      }
+      case "text.received": thread.push({ from: "you", kind: "reply", text: p.text, at }); break;
+      case "email.sent": thread.push({ from: "email", kind: "sent", text: `Emailed ${p.to}: “${p.subject}”`, at }); break;
+      case "agent.returned":
+        if (p.agent_id in agents && agents[p.agent_id] !== "texted" && p.ok && ["submit_bids", "write_head_start"].includes(p.tool)) agents[p.agent_id] = "bid";
+        break;
+      case "agent.failed": if (p.tool === "submit_bids" && p.agent_id in agents && agents[p.agent_id] !== "texted") agents[p.agent_id] = "failed"; break;
       case "demo.seeded": seeded = true; break;
       case "decision.made": ranked = true; break;
     }
@@ -226,7 +244,7 @@ app.get("/api/demo/intake", (c) => {
   const messages = [...stored.map(({ id: _id, ...m }) => m), ...waiting]
     .sort((a, b) => Date.parse(b.received_at) - Date.parse(a.received_at));
   const phase = read.size === 0 ? "inbox" : !seeded && resetting ? "reading" : !ranked && resetting ? "bidding" : "ranked";
-  return c.json({ base: base.toISOString(), running: resetting, phase, messages, agents });
+  return c.json({ base: base.toISOString(), running: resetting, phase, messages, agents, thread });
 });
 
 const ReplyBody = z.object({ text: z.string().min(1) });

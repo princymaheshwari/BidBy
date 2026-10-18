@@ -3,18 +3,21 @@
 import { callAgent, type AgentId } from "../agents/openclaw.js";
 import { answerUser } from "../agents/schemas.js";
 import { formatNY, now } from "../clock.js";
-import { DEFAULT_SNOOZE_MINUTES, MAX_FOLLOW_UPS } from "../config.js";
+import { DEFAULT_SNOOZE_MINUTES, MAX_FOLLOW_UPS, config } from "../config.js";
 import { db, newId } from "../db.js";
 import { emit } from "../events.js";
 import { formatTimeNY } from "../nytime.js";
 import { docStatus } from "../pipeline/docs.js";
-import { headStart } from "../pipeline/headstart.js";
+import { headStart, latestHeadStart } from "../pipeline/headstart.js";
 import { dismiss, getObligation, getOpen, isFinal, markDone, protectedTotal, snooze, type Obligation } from "../pipeline/ledger.js";
 import { latestScores } from "../pipeline/rank.js";
+import { canEmail, fromAddress, parseDraft, recipientFor, sendEmail } from "./email.js";
 import {
-  checklistText, headStartChecklistText, money, parseReply, snoozeUntil, statusText, type Reply,
+  checklistText, draftFooter, headStartChecklistText, money, parseReply, snoozeUntil, statusText, type Reply,
 } from "./grammar.js";
 import { sendToUser } from "./spectrum.js";
+
+const DRAFT_PREFIX = "Draft for ";
 
 // Texts sent before core started (by more than this) are logged, not acted on: no surprise replies on boot.
 const STALE_MS = 5 * 60_000;
@@ -82,12 +85,18 @@ async function act(reply: Reply, item: Obligation | undefined): Promise<void> {
     // The head start is normally written before the interrupt; headStart() reuses it (or writes one now).
     case "draft": {
       const hs = await headStart(item.id);
-      const body = hs?.draft_text
-        ? `Draft for ${item.title}:\n\n${hs.draft_text}`
-        : `Next step for ${item.title}: ${item.required_action}`;
-      await sendToUser(body, "reply", item.id);
+      if (!hs?.draft_text) {
+        await sendToUser(`Next step for ${item.title}: ${item.required_action}`, "reply", item.id);
+        return;
+      }
+      const to = recipientFor(item);
+      const footer = draftFooter(to, fromAddress(), !!to && canEmail(to));
+      await sendToUser(`${DRAFT_PREFIX}${item.title}:\n\n${hs.draft_text}\n\n${footer}`, "reply", item.id);
       return;
     }
+    case "send":
+      await sendDraft(item);
+      return;
     case "checklist": {
       const hs = await headStart(item.id);
       const body = hs
@@ -120,6 +129,48 @@ async function act(reply: Reply, item: Obligation | undefined): Promise<void> {
       await sendToUser(await answer(item, reply.text, at), "reply", item.id);
       return;
   }
+}
+
+/** Emails the draft the user was shown, after they replied "send". Every outcome is an event and a text. */
+async function sendDraft(item: Obligation): Promise<void> {
+  const hs = latestHeadStart(item);
+  const shown = db.prepare("SELECT 1 FROM outbound_texts WHERE obligation_id = ? AND body LIKE ? LIMIT 1")
+    .get(item.id, `${DRAFT_PREFIX}%`);
+  if (!hs?.draft_text || !shown) {
+    await sendToUser("Reply 1 first so you can read the draft before I send it.", "reply", item.id);
+    return;
+  }
+  const already = db.prepare(
+    "SELECT json_extract(payload, '$.to') AS to_addr FROM events WHERE type = 'email.sent' AND json_extract(payload, '$.head_start_id') = ? LIMIT 1",
+  ).get(hs.id) as { to_addr: string } | undefined;
+  if (already) {
+    await sendToUser(`Already sent to ${already.to_addr}.`, "reply", item.id);
+    return;
+  }
+
+  const to = recipientFor(item);
+  if (!to || !canEmail(to)) {
+    emit("email.refused", { obligation_id: item.id, to, reason: to ? "not in ALLOWED_EMAIL_RECIPIENTS" : "no recipient" });
+    await sendToUser(draftFooter(to, null, false), "reply", item.id);
+    return;
+  }
+  const { subject, body } = parseDraft(hs.draft_text);
+  const blank = /\[[^\]]{2,40}\]/.exec(`${subject}\n${body}`);
+  if (blank) {
+    emit("email.refused", { obligation_id: item.id, to, reason: `draft still has a placeholder ${blank[0]}` });
+    await sendToUser(`The draft still has ${blank[0]} in it, so I didn't send it. Send it yourself after filling that in.`, "reply", item.id);
+    return;
+  }
+  try {
+    const { message_id } = await sendEmail(to, subject, body);
+    emit("email.sent", { obligation_id: item.id, head_start_id: hs.id, to, subject, mode: config.EMAIL_MODE, message_id });
+  } catch (err) {
+    emit("email.failed", { obligation_id: item.id, to, error: (err as Error).message.slice(0, 200) });
+    await sendToUser("I couldn't send the email just now. The draft is above if you want to send it yourself.", "reply", item.id);
+    return;
+  }
+  const next = hs.checklist[0] ? ` Next: ${hs.checklist[0]}` : "";
+  await sendToUser(`Sent to ${to}: “${subject}”.${next}`, "reply", item.id);
 }
 
 /** The current item's domain agent answers free text via answer_user (at most 3 sentences). */

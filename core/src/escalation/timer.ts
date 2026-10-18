@@ -6,11 +6,12 @@ import {
   CALL_MAX_HOURS_LEFT, CALL_SCORE, DIGEST_HOUR, INTERRUPT_SCORE, MAX_FOLLOW_UPS, NO_REPLY_MINUTES, TICK_DEMO_MINUTES,
 } from "../config.js";
 import { db, getSettings, updateSettings } from "../db.js";
-import { digestText, followUpText, interruptText } from "../messaging/grammar.js";
+import { digestText, followUpText, interruptText, type DocsReport } from "../messaging/grammar.js";
 import { followUpsSent } from "../messaging/replies.js";
 import { sendToUser } from "../messaging/spectrum.js";
 import { nyDateKey, nyWallClock } from "../nytime.js";
-import { headStart } from "../pipeline/headstart.js";
+import { blankFor, docStatus } from "../pipeline/docs.js";
+import { docFileNames, docsFolder, headStart } from "../pipeline/headstart.js";
 import { getObligation, isFinal, listObligations, markNotified, wake, type Obligation } from "../pipeline/ledger.js";
 import { latestScores, rank } from "../pipeline/rank.js";
 import { hoursLeft } from "../pipeline/score.js";
@@ -125,10 +126,21 @@ async function notifyTop(at: Date): Promise<void> {
   const settings = getSettings();
   if (settings.interrupts_today >= settings.interrupt_budget) return; // held until the next budget day
 
-  await headStart(top.id); // F3: the first step is done before the user is interrupted (null → text anyway)
-  await sendToUser(interruptText(top, at), "interrupt", top.id);
+  // F3: the first step is done before the user is interrupted (null → text anyway). For aid items the
+  // text says where the documents are on this computer and which ones are still missing.
+  const hs = await headStart(top.id);
+  const docs = hs && top.domain === "aid" && top.required_docs.length ? docsReport(top, hs.found_files) : undefined;
+  await sendToUser(interruptText(top, at, docs), "interrupt", top.id);
   markNotified(top.id);
   updateSettings({ interrupts_today: getSettings().interrupts_today + 1 });
+}
+
+function docsReport(ob: Obligation, foundFiles: string[]): DocsReport {
+  const all = docFileNames();
+  return {
+    folder: docsFolder(),
+    docs: docStatus(ob.required_docs, foundFiles).map(({ doc, file }) => ({ doc, file, blank: file ? null : blankFor(doc, all) })),
+  };
 }
 
 // --- follow-up: no reply NO_REPLY_MINUTES after BidBy's last text about a notified item ---

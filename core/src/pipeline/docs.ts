@@ -29,6 +29,13 @@ export function docStatus(requiredDocs: string[], foundFiles: string[]): { doc: 
   return requiredDocs.map((doc) => ({ doc, file: foundFiles.find((f) => covers(doc, f)) ?? null }));
 }
 
+/** A blank copy of a form the student must sign or complete, if one was found (e.g. "Worksheet (blank).pdf"). */
+export function blankFor(requiredDoc: string, foundFiles: string[]): string | null {
+  if (!/\b(signed|completed)\b/i.test(requiredDoc)) return null;
+  const unsigned = requiredDoc.replace(/\b(signed|completed)\b/gi, "");
+  return foundFiles.find((f) => tokens(basename(f)).includes("blank") && covers(unsigned, f)) ?? null;
+}
+
 export function missingDocs(requiredDocs: string[], foundFiles: string[]): string[] {
   return docStatus(requiredDocs, foundFiles).filter((d) => !d.file).map((d) => d.doc);
 }

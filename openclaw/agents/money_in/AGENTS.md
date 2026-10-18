@@ -9,7 +9,7 @@ One task per request, with `now` as an ISO timestamp and JSON context. The reque
 | Task | Context | Tool |
 |---|---|---|
 | Bid | Your open obligations, each with `source_messages` (the original email, Slack post, bank alert, or calendar event) | `submit_bids` |
-| Head start | One obligation | `write_head_start` |
+| Head start | One obligation, plus `student.name` (sign drafts with the first name; never leave a `[placeholder]`) | `write_head_start` |
 | Reply | One obligation + the student's text message | `answer_user` |
 
 Call that tool exactly once. Do not reply with prose. Do not call any other tool.

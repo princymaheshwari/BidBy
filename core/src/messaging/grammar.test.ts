@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  digestText, followUpText, headStartChecklistText, interruptText, money, parseReply, snoozeUntil, statusText,
+  digestText, draftFooter, followUpText, headStartChecklistText, interruptText, money, parseReply, snoozeUntil, statusText,
 } from "./grammar.js";
 
 // Sunday Oct 18 2026, 2:00 PM New York (EDT).
@@ -110,4 +110,34 @@ test("head start checklist: ✓ found, ✗ missing, steps, at most 2 resources, 
     "- Emergency grant: Apply via the Dean of Students form.",
   ].join("\n"));
   assert.doesNotMatch(text, /https?:\/\//);
+});
+
+test("aid interrupt says where the documents are and which are missing", () => {
+  const folder = "C:\Users\p\Documents\Financial Aid\FAFSA 2026-27";
+  const text = interruptText(verification, at, {
+    folder,
+    docs: [
+      { doc: "2025 IRS Tax Return Transcript", file: "docs/2025 IRS Tax Return Transcript.pdf", blank: null },
+      { doc: "2026-27 Verification Worksheet (signed)", file: null, blank: "2026-27 Verification Worksheet (blank).pdf" },
+      { doc: "Photo ID", file: null, blank: null },
+    ],
+  });
+  assert.equal(
+    text,
+    "FAFSA verification: $3,700 in aid is on hold.\n" +
+      "Due tonight 11:59 PM.\n" +
+      `Your documents are in ${folder}\n` +
+      "✓ 2025 IRS Tax Return Transcript (2025 IRS Tax Return Transcript.pdf)\n" +
+      "✗ 2026-27 Verification Worksheet (signed): only the blank form is there (2026-27 Verification Worksheet (blank).pdf). Fill it in and sign it.\n" +
+      "✗ Photo ID: not in that folder yet.\n" +
+      "Reply 1 for a drafted email to the aid office, 2 for the document checklist.",
+  );
+  assert.doesNotMatch(text, /https?:|www\./);
+});
+
+test("send, yes and send it mean send; the draft footer offers it only for an allowed recipient", () => {
+  for (const t of ["send", "Send it", "yes", "Yes, send", "y"]) assert.deepEqual(parseReply(t), { action: "send" }, t);
+  assert.deepEqual(parseReply("yes please explain"), { action: "ask", text: "yes please explain" });
+  assert.equal(draftFooter("aid@x.edu", "me@gmail.com", true), "Reply send and I'll email it to aid@x.edu from me@gmail.com.");
+  assert.equal(draftFooter("aid@x.edu", null, false), "I'm not set up to email aid@x.edu. Copy it into your email to send it.");
 });

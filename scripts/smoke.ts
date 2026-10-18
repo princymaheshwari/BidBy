@@ -7,7 +7,7 @@ import { resolve } from "node:path";
 import { nyWallClock } from "../core/src/nytime.js";
 
 const BASE = process.env.BIDBY_URL ?? "http://127.0.0.1:8787";
-const USE_CASE_FIXTURES = new Set(["card_statement", "card_reminder", "subs_renewal", "scholarship_slack", "reimbursement_travel", "ta_timesheet"]);
+const USE_CASE_FIXTURES = new Set(["verification", "card_statement", "card_reminder", "subs_renewal", "scholarship_slack", "reimbursement_travel", "ta_timesheet"]);
 
 interface BidbyEvent { id: string; type: string; payload: Record<string, any>; at: string }
 interface Obligation { id: string; title: string; status: string; amount_at_risk_usd: number; snoozed_until: string | null; source_message_ids: string[] }
@@ -98,10 +98,9 @@ async function main(): Promise<void> {
   const noise = JSON.parse(readFileSync(resolve(import.meta.dirname, "../fixtures/inbox.json"), "utf8")).length - USE_CASE_FIXTURES.size;
   console.log(`  (${obs.length} obligations from ${fixtureOf.size} messages, ${noise} of them noise)`);
 
-  step(2, "Inject the FAFSA verification");
-  mark = events.length;
-  const injected = await api("POST", "/api/demo/inject", { fixture_id: "verification" });
-  const vid: string = injected.obligation_ids[0];
+  step(2, "FAFSA verification (buried in the inbox) ranks first and is texted");
+  const vmsg = [...fixtureOf].find(([, f]) => f === "verification")?.[0];
+  const vid: string = obs.find((o) => vmsg && o.source_message_ids.includes(vmsg))?.id ?? "";
   check("verification became an obligation", !!vid, vid);
   const top = await waitFor("a ranking round with the verification", () =>
     event(mark, "decision.made", (p) => p.ranked_ids.includes(vid))?.payload);
@@ -109,12 +108,20 @@ async function main(): Promise<void> {
   await waitFor("the interrupt text", () => event(mark, "obligation.notified", (p) => p.id === vid));
   const interrupt = event(mark, "text.sent", (p) => p.kind === "interrupt" && p.obligation_id === vid);
   check("notify: interrupt text sent", !!interrupt, interrupt?.payload.body.split("\n")[0]);
+  check("interrupt says where the documents are", /Your documents are in /.test(interrupt?.payload.body ?? ""));
 
   step(3, "Reply 1");
   mark = events.length;
   await api("POST", "/api/demo/reply", { text: "1" });
   const draft = await waitFor("the draft", () => event(mark, "text.sent", (p) => p.kind === "reply" && p.obligation_id === vid));
   check("draft sent", draft.payload.body.startsWith("Draft for"), draft.payload.body.split("\n")[0]);
+
+  step(3.5, "Reply send");
+  mark = events.length;
+  await api("POST", "/api/demo/reply", { text: "send" });
+  const outcome = await waitFor("an email outcome", () =>
+    after(mark).find((e) => ["email.sent", "email.refused", "email.failed"].includes(e.type)));
+  check("send handled (sent, or refused by the allowlist)", outcome.type !== "email.failed", `${outcome.type} ${outcome.payload.to ?? ""}`);
 
   step(4, "Jump to 9 PM: BidBy calls (mock), then 'snooze 10pm'");
   mark = events.length;

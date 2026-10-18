@@ -136,6 +136,14 @@
     "received_at_offset_hours": -6
   },
   {
+    "id": "verification",
+    "source": "email",
+    "sender": "finaid@gtlstate.example",
+    "subject": "Action required: you've been selected for FAFSA verification",
+    "body": "Dear Princy,\n\nYour 2026-27 FAFSA has been selected for verification. Until verification is complete, your financial aid of $3,700 (Federal Pell Grant $2,900 and State Opportunity Grant $800) is on hold and will not be disbursed.\n\nPlease submit the following documents in the Financial Aid Portal by {{day:+0@23:59}}:\n1. 2025 IRS Tax Return Transcript\n2. 2026-27 Verification Worksheet (signed)\n\nIf we do not receive both documents by the deadline, your aid may be cancelled for the term.\n\nQuestions? Reply to this email or visit the Office of Financial Aid, Student Services Building, Room 110.\n\nOffice of Financial Aid\nGT-like State University",
+    "received_at_offset_hours": -5
+  },
+  {
     "id": "bank_tip",
     "source": "bank",
     "sender": "insights@northgatebank.example",

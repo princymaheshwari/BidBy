@@ -385,6 +385,9 @@
       "text.sent": (p) => ["text", `📱 Text (${p.kind.replace("_", "-")}): ${firstLine(p.body)}`],
       "text.received": (p) => ["text", `💬 You replied: “${truncate(p.text, 60)}”`],
       "text.ignored": () => null,
+      "email.sent": (p) => ["good", `📧 Emailed ${p.to}: “${truncate(p.subject, 70)}”${p.mode === "log" ? " (log only)" : ""}`],
+      "email.refused": (p) => ["warn", `📧 Not sent: ${p.to ?? "no recipient"} (${p.reason})`],
+      "email.failed": (p) => ["warn", `📧 Email failed: ${truncate(p.error, 90)}`],
       "agent.called": () => null,
       "agent.returned": () => null,
       "agent.failed": (p) => ["warn", `${p.agent_id} agent failed (${p.tool})`],
@@ -427,7 +430,7 @@
         feed.prepend(li);
         while (feed.children.length > 250) feed.lastChild.remove();
       }
-      if (/^(obligation|decision|demo|clock|call|text|headstart|message)\./.test(e.type)) refreshSoon();
+      if (/^(obligation|decision|demo|clock|call|text|headstart|message|email)\./.test(e.type)) refreshSoon();
       else if (e.type.startsWith("voice.")) renderCall();
     }
 

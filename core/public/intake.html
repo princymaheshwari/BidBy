@@ -118,6 +118,18 @@
     .state.bidding { background: #dbeafe; color: #1d4ed8; animation: pulse 1s infinite; }
     .state.bid { background: #d1fae5; color: #065f46; }
     .state.failed { background: #fee2e2; color: #991b1b; }
+    .state.starting { background: #fef3c7; color: #92400e; animation: pulse 1s infinite; }
+    .state.texted { background: var(--accent); color: #fff; }
+
+    /* --- the iMessage thread (Photon) --- */
+    .phone { margin: 0 14px 12px; border: 1px solid var(--line); border-radius: 12px; background: #f8fafc; display: none; }
+    .phone.on { display: block; animation: arrive .5s ease-out; }
+    .phone h3 { margin: 0; padding: 8px 12px; font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--ink2); border-bottom: 1px solid var(--line); }
+    .thread { padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+    .bubble { max-width: 88%; padding: 7px 11px; border-radius: 16px; font-size: 13.5px; white-space: pre-wrap; line-height: 1.35; }
+    .bubble.bidby { align-self: flex-start; background: #e5e7eb; color: var(--ink); border-bottom-left-radius: 4px; }
+    .bubble.you { align-self: flex-end; background: #0a84ff; color: #fff; border-bottom-right-radius: 4px; }
+    .bubble.email { align-self: center; background: #d1fae5; color: #065f46; font-weight: 700; border-radius: 8px; font-size: 12.5px; }
 
     .brief { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; }
     .brief:last-child { border-bottom: 0; }
@@ -193,7 +205,11 @@
           </div>
           <div class="found" id="found"></div>
         </div>
-        <div class="scroll"><div class="agents" id="agents"></div><a class="next" id="next" href="/">The agents have bid. See who wins your attention →</a></div>
+        <div class="scroll" id="agentScroll">
+          <div class="agents" id="agents"></div>
+          <div class="phone" id="phone"><h3>📱 iMessage to Princy · via Photon</h3><div class="thread" id="thread"></div></div>
+          <a class="next" id="next" href="/">The agents have bid. See who wins your attention →</a>
+        </div>
       </section>
     </div>
   </main>
@@ -205,7 +221,8 @@
     const DOMAIN_LABEL = { aid: "Aid", credit: "Credit", subs: "Subscriptions", money_in: "Money in" };
     const SOURCE_ICON = { email: "✉", bank: "$", slack: "#", calendar: "31" };
     const SOURCE_LABEL = { email: "Email", bank: "Bank alert", slack: "Slack", calendar: "Calendar" };
-    const AGENT_STATE = { idle: "briefed", bidding: "bidding…", bid: "bid submitted", failed: "no bid · ledger fallback" };
+    const AGENT_STATE = { idle: "briefed", bidding: "bidding…", bid: "bid submitted", failed: "no bid · ledger fallback",
+      starting: "won · writing the head start…", texted: "won · texted you" };
     const ARRIVE_MS = 260; // act 1: one notification every 260 ms
     const PARALLEL = 8;    // extractor sessions in flight during a reset (server RESET_CONCURRENCY)
 
@@ -458,7 +475,20 @@
       if (order.length) syncChildren(box, order);
       else box.replaceChildren(el("div", "empty", intake.running ? "Agents spin up as the extractor finds money items." : "No agents yet."));
 
-      $("next").classList.toggle("on", Object.values(intake.agents).includes("bid") && !intake.running);
+      $("next").classList.toggle("on", Object.values(intake.agents).some((s) => ["bid", "starting", "texted"].includes(s)) && !intake.running);
+      renderThread();
+    }
+
+    function renderThread() {
+      const thread = intake.thread ?? [];
+      const phone = $("phone");
+      const was = phone.classList.contains("on");
+      phone.classList.toggle("on", thread.length > 0);
+      const box = $("thread");
+      if (box.children.length === thread.length) return;
+      box.replaceChildren(...thread.map((m) => el("div", `bubble ${m.from}`, m.text)));
+      // Bring the newest text into view the moment it lands.
+      if (thread.length && (!was || thread.at(-1).from !== "you")) phone.scrollIntoView({ behavior: "smooth", block: "end" });
     }
 
     const briefs = new Map(); // obligation id -> brief element
@@ -600,7 +630,7 @@
     source.onerror = () => { $("conn").textContent = "reconnecting"; $("conn").className = "pill off"; };
     source.onmessage = (msg) => {
       const e = JSON.parse(msg.data);
-      if (/^(message|obligation|agent|bid|decision|demo|clock)\./.test(e.type)) refreshSoon();
+      if (/^(message|obligation|agent|bid|decision|demo|clock|text|email|headstart)\./.test(e.type)) refreshSoon();
     };
 
     setInterval(() => { renderClock(); tickCountdowns(); }, 1000);

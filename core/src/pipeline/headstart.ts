@@ -7,7 +7,7 @@ import { resolve } from "node:path";
 import { callAgent, type AgentId } from "../agents/openclaw.js";
 import { writeHeadStart } from "../agents/schemas.js";
 import { formatNY, now } from "../clock.js";
-import { REPO_ROOT } from "../config.js";
+import { REPO_ROOT, config } from "../config.js";
 import { db, newId } from "../db.js";
 import { emit } from "../events.js";
 import { keepExisting, missingDocs } from "./docs.js";
@@ -16,7 +16,12 @@ import { hoursLeft } from "./score.js";
 
 /** The aid agent's documents (synced into its OpenClaw workspace as docs/ by setup-openclaw.sh --sync). */
 const AID_DOCS = resolve(REPO_ROOT, "openclaw/agents/aid/docs");
-const RESOURCES_FILE = "school_resources.md";
+const RESOURCES_FILE = "school_resources.md"; // always read from the repo
+const TEXT_DOC = /\.(md|txt)$/i;
+const SKIP = new Set([RESOURCES_FILE, "desktop.ini", "thumbs.db"]);
+
+/** Where the student's documents live on this computer (USER_DOCS_DIR, else the repo's aid docs). */
+export const docsFolder = (): string => resolve(config.USER_DOCS_DIR ?? AID_DOCS);
 
 export interface HeadStart {
   id: string;
@@ -72,6 +77,7 @@ async function build(obligationId: string): Promise<HeadStart | null> {
 
 function buildPrompt(ob: Obligation, docs: AidDocs | null, at: Date): string {
   const context: Record<string, unknown> = {
+    student: { name: config.STUDENT_NAME },
     obligation: {
       id: ob.id, domain: ob.domain, title: ob.title, amount_at_risk_usd: ob.amount_at_risk_usd,
       deadline_at: ob.deadline_at, hours_left: Math.round(hoursLeft(ob.deadline_at, at) * 10) / 10,
@@ -96,13 +102,23 @@ interface AidDocs {
 }
 
 function readAidDocs(): AidDocs {
-  const names = readdirSync(AID_DOCS).filter((n) => !n.startsWith(".")).sort();
-  const files = names
-    .filter((n) => n !== RESOURCES_FILE)
-    .map((name) => ({ name, title: firstLine(readFileSync(resolve(AID_DOCS, name), "utf8")) }));
-  const resources = names.includes(RESOURCES_FILE) ? readFileSync(resolve(AID_DOCS, RESOURCES_FILE), "utf8") : "";
+  const dir = docsFolder();
+  const names = readdirSync(dir, { withFileTypes: true })
+    .filter((d) => d.isFile() && !d.name.startsWith(".") && !SKIP.has(d.name.toLowerCase()))
+    .map((d) => d.name)
+    .sort();
+  // Text files are titled by their first line; anything else (PDFs, scans) by its file name.
+  const files = names.map((name) => ({
+    name,
+    title: TEXT_DOC.test(name) ? firstLine(readFileSync(resolve(dir, name), "utf8")) : name.replace(/\.[^.]+$/, ""),
+  }));
+  const resourcesPath = resolve(AID_DOCS, RESOURCES_FILE);
+  const resources = readdirSync(AID_DOCS).includes(RESOURCES_FILE) ? readFileSync(resourcesPath, "utf8") : "";
   return { files, resources };
 }
+
+/** File names in the student's documents folder. */
+export const docFileNames = (): string[] => readAidDocs().files.map((f) => f.name);
 
 const firstLine = (text: string) => (text.split(/\r?\n/).find((l) => l.trim()) ?? "").replace(/^#+\s*/, "").trim();
 

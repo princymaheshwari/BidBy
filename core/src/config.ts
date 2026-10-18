@@ -36,6 +36,21 @@ const Env = z.object({
     z.array(z.string().regex(/^\+[1-9]\d{6,14}$/, "each number must be E.164, e.g. +14045551234")),
   ),
 
+  // Email (the drafted message, sent only after the user texts "send"). Gmail SMTP with an App Password.
+  EMAIL_MODE: z.enum(["gmail", "log"]).default("log"),
+  GMAIL_USER: optional,
+  GMAIL_APP_PASSWORD: optional,
+  AID_OFFICE_EMAIL: optional, // where aid drafts go; default: the address the aid email came from
+  ALLOWED_EMAIL_RECIPIENTS: z.preprocess(
+    (v) => (typeof v === "string" ? v.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean) : []),
+    z.array(z.string().email("each recipient must be an email address")),
+  ),
+
+  STUDENT_NAME: z.string().default("Princy Maheshwari"), // signs drafted emails
+
+  // The student's own documents folder (head start looks here). Default: the repo's aid docs.
+  USER_DOCS_DIR: optional,
+
   PORT: z.coerce.number().int().positive().default(8787),
   DB_PATH: z.string().default("bidby.db"), // relative to the repo root; tests point this at a scratch file
 });
@@ -61,6 +76,10 @@ const voiceMissing = missing(voiceNeeds[config.VOICE_MODE]);
 if (config.VOICE_MODE === "live" && config.ALLOWED_DIAL_NUMBERS.length === 0) voiceMissing.push("ALLOWED_DIAL_NUMBERS");
 if (voiceMissing.length > 0) {
   throw new Error(`[config] VOICE_MODE=${config.VOICE_MODE} needs (see .env.example):\n${voiceMissing.map((n) => `  ${n}`).join("\n")}`);
+}
+const emailMissing = config.EMAIL_MODE === "gmail" ? missing(["GMAIL_USER", "GMAIL_APP_PASSWORD"]) : [];
+if (emailMissing.length > 0) {
+  throw new Error(`[config] EMAIL_MODE=gmail needs (see .env.example):\n${emailMissing.map((n) => `  ${n}`).join("\n")}`);
 }
 export type Config = typeof config;
 

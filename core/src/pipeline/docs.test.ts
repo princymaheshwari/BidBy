@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { covers, docStatus, keepExisting, missingDocs } from "./docs.js";
+import { blankFor, covers, docStatus, keepExisting, missingDocs } from "./docs.js";
 
 const files = [
   "docs/2025_tax_return_transcript_PLACEHOLDER.md",
@@ -41,4 +41,12 @@ test("invented files are dropped; real ones are normalized to docs/<name>", () =
   );
   assert.deepEqual(kept, ["docs/2025_tax_return_transcript_PLACEHOLDER.md", "docs/resume.md"]);
   assert.deepEqual(dropped, ["docs/w2_2025.pdf"]);
+});
+
+test("a blank form is reported for a signed-form requirement, never as the form itself", () => {
+  const pdfs = ["2025 IRS Tax Return Transcript.pdf", "2026-27 Verification Worksheet (blank).pdf", "Student ID.pdf"];
+  assert.equal(blankFor("2026-27 Verification Worksheet (signed)", pdfs), "2026-27 Verification Worksheet (blank).pdf");
+  assert.equal(blankFor("2025 IRS Tax Return Transcript", pdfs), null);
+  assert.deepEqual(missingDocs(["2026-27 Verification Worksheet (signed)"], pdfs), ["2026-27 Verification Worksheet (signed)"]);
+  assert.ok(covers("2025 IRS Tax Return Transcript", pdfs[0]!));
 });

@@ -20,7 +20,11 @@
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
+    "@types/nodemailer": "^8.0.2",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "nodemailer": "^7.0.13"
   }
 }
