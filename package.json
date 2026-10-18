@@ -1,0 +1,25 @@
+{
+  "name": "bidby",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Personal finance agent for students: finds money at risk in your messages and texts you only what costs most to miss.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=26"
+  },
+  "workspaces": [
+    "core"
+  ],
+  "scripts": {
+    "dev": "tsx watch core/src/server.ts",
+    "check": "tsc --noEmit",
+    "test": "node --test --import tsx \"core/src/**/*.test.ts\"",
+    "smoke": "tsx scripts/smoke.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3"
+  }
+}
