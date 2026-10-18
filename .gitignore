@@ -1,7 +1,7 @@
 # --- planning docs (kept local for now) ---
-docs/
-specs/
-CLAUDE.md
+/docs/
+/specs/
+/CLAUDE.md
 
 # --- Claude Code ---
 .claude/
@@ -40,6 +40,9 @@ npm-debug.log*
 
 # --- tunnels ---
 .cloudflared/
+
+# --- browser test artifacts ---
+.playwright-mcp/
 
 # --- OS / editor ---
 .DS_Store

@@ -1,1 +1,10 @@
-[]
+[
+  {
+    "id": "placeholder_verification",
+    "source": "email",
+    "sender": "finaid@placeholder-university.example",
+    "subject": "PLACEHOLDER: Action required for your aid",
+    "body": "Placeholder aid office email. Real content arrives in spec 07.",
+    "received_at_offset_hours": 0
+  }
+]

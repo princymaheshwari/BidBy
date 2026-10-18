@@ -1,1 +1,18 @@
-[]
+[
+  {
+    "id": "placeholder_card_statement",
+    "source": "bank",
+    "sender": "alerts@placeholder-bank.example",
+    "subject": "PLACEHOLDER: Your statement is ready",
+    "body": "Placeholder card statement. Real content arrives in spec 07.",
+    "received_at_offset_hours": -20
+  },
+  {
+    "id": "placeholder_newsletter",
+    "source": "email",
+    "sender": "news@placeholder-club.example",
+    "subject": "PLACEHOLDER: This week in clubs",
+    "body": "Placeholder noise email. Real content arrives in spec 07.",
+    "received_at_offset_hours": -6
+  }
+]

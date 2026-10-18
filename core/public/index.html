@@ -4,9 +4,49 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>BidBy</title>
+  <style>
+    body { font: 15px/1.4 system-ui, sans-serif; margin: 24px; background: #fafafa; color: #111; }
+    h1 { margin: 0 0 4px; }
+    #status { color: #666; margin-bottom: 16px; }
+    #feed { list-style: none; padding: 0; margin: 0; font-family: ui-monospace, monospace; font-size: 13px; }
+    #feed li { padding: 6px 8px; border-bottom: 1px solid #e5e5e5; }
+    .at { color: #888; margin-right: 8px; }
+    .type { font-weight: 600; margin-right: 8px; }
+    .payload { color: #444; word-break: break-all; }
+  </style>
 </head>
 <body>
-  <!-- Judge view. Bare event feed in spec 00; full ledger / bids / feed in spec 07. -->
+  <!-- Bare event feed (spec 00). The full judge view is spec 07. -->
   <h1>BidBy</h1>
+  <div id="status">connecting…</div>
+  <ul id="feed"></ul>
+
+  <script>
+    const feed = document.getElementById("feed");
+    const status = document.getElementById("status");
+    const seen = new Set();
+
+    function render(e) {
+      const li = document.createElement("li");
+      for (const [cls, text] of [["at", e.at], ["type", e.type], ["payload", JSON.stringify(e.payload)]]) {
+        const span = document.createElement("span");
+        span.className = cls;
+        span.textContent = text;
+        li.append(span);
+      }
+      feed.prepend(li);
+    }
+
+    const source = new EventSource("/api/events");
+    source.onopen = () => { status.textContent = "live"; };
+    source.onerror = () => { status.textContent = "disconnected — retrying…"; };
+    source.onmessage = (msg) => {
+      const e = JSON.parse(msg.data);
+      if (seen.has(e.id)) return; // replayed on reconnect
+      seen.add(e.id);
+      if (e.type === "demo.reset") feed.replaceChildren();
+      render(e);
+    };
+  </script>
 </body>
 </html>
