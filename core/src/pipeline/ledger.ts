@@ -71,6 +71,24 @@ export function markDone(id: string, via: DoneVia): Obligation | undefined {
   return done;
 }
 
+/** BidBy texted the user about this open obligation (spec 04 notify rule). */
+export function markNotified(id: string): Obligation | undefined {
+  const ob = getObligation(id);
+  if (!ob || ob.status !== "open") return undefined;
+  const notified = setStatus(id, "notified");
+  emit("obligation.notified", { id, title: notified.title });
+  return notified;
+}
+
+/** A snooze ran out: the obligation is back in play as notified (the user already knows about it). */
+export function wake(id: string): Obligation | undefined {
+  const ob = getObligation(id);
+  if (!ob || ob.status !== "snoozed") return undefined;
+  const woken = setStatus(id, "notified");
+  emit("obligation.woke", { id, title: woken.title, snoozed_until: ob.snoozed_until });
+  return woken;
+}
+
 export function snooze(id: string, untilIso: string): Obligation | undefined {
   const ob = getObligation(id);
   if (!ob || isFinal(ob)) return undefined;

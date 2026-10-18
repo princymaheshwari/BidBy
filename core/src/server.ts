@@ -1,4 +1,4 @@
-// Hono app and routes. Later specs start the tick loop and Spectrum loop here.
+// Hono app and routes; starts the tick loop and the Spectrum loop.
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { serve } from "@hono/node-server";
@@ -7,8 +7,10 @@ import { z } from "zod";
 import { advance, now, setTo } from "./clock.js";
 import { config } from "./config.js";
 import { clearAll, getSettings } from "./db.js";
+import { startTimer, tick } from "./escalation/timer.js";
 import { emit, eventsStream } from "./events.js";
 import { findFixture, loadInbox, renderFixture } from "./fixtures.js";
+import { startSpectrum } from "./messaging/spectrum.js";
 import { ingest } from "./pipeline/ingest.js";
 import { dismiss, getObligation, getOpen, listObligations, markDone, snooze } from "./pipeline/ledger.js";
 import { latestDecision, latestScores, rank } from "./pipeline/rank.js";
@@ -87,6 +89,7 @@ app.post("/api/demo/clock", async (c) => {
 
   const t = "advance_minutes" in body.data ? advance(body.data.advance_minutes) : setTo(body.data.set_iso);
   emit("clock.changed", { now: t.toISOString(), offset_minutes: getSettings().clock_offset_minutes });
+  void tick(); // immediate tick so "Jump to 9 PM" has visible effects (it may rank, so don't wait for it)
   return c.json({ now: t.toISOString() });
 });
 
@@ -145,4 +148,6 @@ async function checkGateway(): Promise<void> {
 serve({ fetch: app.fetch, port: config.PORT, hostname: "127.0.0.1" }, (info) => {
   console.log(`[boot] bidby-core on http://127.0.0.1:${info.port}`);
   void checkGateway();
+  startSpectrum();
+  startTimer();
 });

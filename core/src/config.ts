@@ -49,3 +49,9 @@ export const CALL_SCORE = 1500;
 export const CALL_MAX_HOURS_LEFT = 12;
 export const NO_REPLY_MINUTES = 120;
 export const TICK_DEMO_MINUTES = 15;
+
+// Texting (spec 04, SYSTEM_DESIGN §9.3).
+export const MAX_FOLLOW_UPS = 2;          // Photon deliverability: at most 2 follow-ups per obligation
+export const SEND_GAP_MS = 2_000;         // real time between outbound texts (no bursts)
+export const DIGEST_HOUR = 8;             // New York demo-time hour of the daily digest
+export const DEFAULT_SNOOZE_MINUTES = 120;

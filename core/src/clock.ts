@@ -28,31 +28,5 @@ export function hoursUntil(iso: string): number {
   return (Date.parse(iso) - now().getTime()) / HOUR_MS;
 }
 
-// --- America/New_York helpers (the demo's timezone) ---
-
-const NY = "America/New_York";
-
-function nyOffsetMinutes(at: Date): number {
-  const name = new Intl.DateTimeFormat("en-US", { timeZone: NY, timeZoneName: "longOffset" })
-    .formatToParts(at).find((p) => p.type === "timeZoneName")?.value ?? "";
-  const m = /GMT([+-])(\d{2}):(\d{2})/.exec(name);
-  return m ? (m[1] === "-" ? -1 : 1) * (Number(m[2]) * 60 + Number(m[3])) : 0;
-}
-
-/** The instant of hour:minute New York time, dayOffset days after base's New York date. */
-export function nyWallClock(base: Date, dayOffset: number, hour: number, minute: number): Date {
-  const p = Object.fromEntries(
-    new Intl.DateTimeFormat("en-US", { timeZone: NY, year: "numeric", month: "2-digit", day: "2-digit" })
-      .formatToParts(base).map((x) => [x.type, x.value]),
-  );
-  const guess = Date.UTC(Number(p.year), Number(p.month) - 1, Number(p.day) + dayOffset, hour, minute);
-  return new Date(guess - nyOffsetMinutes(new Date(guess)) * MINUTE_MS);
-}
-
-/** "Sunday, October 19 at 11:59 PM ET" */
-export function formatNY(at: Date): string {
-  const s = new Intl.DateTimeFormat("en-US", {
-    timeZone: NY, weekday: "long", month: "long", day: "numeric", hour: "numeric", minute: "2-digit",
-  }).format(at);
-  return `${s} ET`;
-}
+// New York date helpers live in nytime.ts (pure, testable); re-exported for existing callers.
+export { formatNY, nyWallClock } from "./nytime.js";
