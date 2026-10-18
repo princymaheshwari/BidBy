@@ -132,9 +132,9 @@
     "semantic_hash": ""
   },
   "openclaw/config.patch.json": {
-    "mtime": 1792296672.3039706,
-    "seen": 1792298037.2702143,
-    "ast_hash": "5819d534775601cd330ca488264de4bc",
+    "mtime": 1792300080.7612405,
+    "seen": 1792300976.0334623,
+    "ast_hash": "be2b0d96ea224e4e34e91dab0326bc31",
     "semantic_hash": ""
   },
   "package.json": {
@@ -144,9 +144,9 @@
     "semantic_hash": ""
   },
   "scripts/setup-openclaw.sh": {
-    "mtime": 1792297047.988788,
-    "seen": 1792298037.2702162,
-    "ast_hash": "701e1552e9c827278ed0e9951e389851",
+    "mtime": 1792300471.402192,
+    "seen": 1792300976.0334647,
+    "ast_hash": "1368bd93b2af48529368a942d512b3da",
     "semantic_hash": ""
   },
   "scripts/smoke.ts": {
@@ -174,9 +174,9 @@
     "semantic_hash": ""
   },
   "openclaw/agents/coordinator/AGENTS.md": {
-    "mtime": 1792296711.1925385,
-    "seen": 1792298037.2702208,
-    "ast_hash": "4a3c9273caee3cec11c740253d7a9c85",
+    "mtime": 1792300819.8731322,
+    "seen": 1792300976.0334694,
+    "ast_hash": "78721f185de391690fa4878c410c7669",
     "semantic_hash": ""
   },
   "openclaw/agents/credit/AGENTS.md": {

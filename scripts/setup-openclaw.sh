@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
-# Registers BidBy's six OpenClaw agents, links their playbooks from this repo,
-# applies openclaw/config.patch.json, and lists the Gateway's agent targets.
+# Registers BidBy's six OpenClaw agents with their workspaces in this repo
+# (openclaw/agents/<id>/, so AGENTS.md edits reach the live agent), applies
+# openclaw/config.patch.json, and lists the Gateway's agent targets.
+# OpenClaw refuses symlinked bootstrap files, which is why the workspace is the repo folder itself.
 # Idempotent. Run it inside WSL, where OpenClaw and its Gateway live:
 #   bash scripts/setup-openclaw.sh                    # interactive shell
 #   bash scripts/setup-openclaw.sh --force-restart    # non-interactive: lets OpenClaw stop its own service
-# Applying the config patch briefly stops and restarts the Gateway.
+# Applying the config briefly stops and restarts the Gateway.
 # See specs/01-openclaw-setup.md.
 set -euo pipefail
 
@@ -17,6 +19,8 @@ STOP_FLAGS=()
 die() { echo "setup-openclaw: $*" >&2; exit 1; }
 command -v openclaw >/dev/null || die "openclaw is not on PATH. Run this in the WSL shell where OpenClaw is installed."
 command -v node >/dev/null || die "node is not on PATH."
+
+workspace_dir() { echo "$REPO/openclaw/agents/$1"; }
 
 # Prints "<id>\t<workspace>" for every agent, from OpenClaw's own agent list.
 list_workspaces() {
@@ -44,38 +48,26 @@ read_token() {
 
 # --- 1. agents ---------------------------------------------------------------
 echo "== 1/5 agents"
-root="$(openclaw config get agents.defaults.workspace)"
-[ -n "$root" ] || die "could not read agents.defaults.workspace from OpenClaw config"
 load_workspaces
+RELOCATE=()
 for id in "${AGENTS[@]}"; do
-  if [ -n "${WS[$id]:-}" ]; then
-    echo "   = $id (already registered)"
-  else
-    openclaw agents add "$id" --workspace "$root/bidby-$id" --non-interactive --json >/dev/null
+  ws="$(workspace_dir "$id")"
+  [ -f "$ws/AGENTS.md" ] || die "missing playbook $ws/AGENTS.md"
+  # An empty .git keeps OpenClaw from running `git init` inside this repo folder.
+  mkdir -p "$ws/.git"
+  if [ -z "${WS[$id]:-}" ]; then
+    openclaw agents add "$id" --workspace "$ws" --non-interactive --json >/dev/null
     echo "   + $id"
+  elif [ "${WS[$id]}" != "$ws" ]; then
+    RELOCATE+=("$id")
+    echo "   ~ $id (workspace moves to the repo)"
+  else
+    echo "   = $id"
   fi
 done
-load_workspaces
 
-# --- 2. playbooks ------------------------------------------------------------
-echo "== 2/5 playbooks"
-for id in "${AGENTS[@]}"; do
-  ws="${WS[$id]:-}"
-  [ -n "$ws" ] && [ -d "$ws" ] || die "no workspace found for agent $id"
-  # BOOTSTRAP.md is OpenClaw's first-run ritual; it would derail structured tool calls.
-  rm -f "$ws/BOOTSTRAP.md"
-  ln -sfn "$REPO/openclaw/agents/$id/AGENTS.md" "$ws/AGENTS.md"
-  echo "   $id: $ws/AGENTS.md -> repo"
-done
-aid_docs="${WS[aid]}/docs"
-if [ -e "$aid_docs" ] && [ ! -L "$aid_docs" ]; then
-  die "$aid_docs exists and is not a symlink; move it aside and rerun"
-fi
-ln -sfn "$REPO/openclaw/agents/aid/docs" "$aid_docs"
-echo "   aid: $aid_docs -> repo"
-
-# --- 3. config patch (needs the Gateway stopped) -----------------------------
-echo "== 3/5 config patch"
+# --- 2. config (needs the Gateway stopped) -------------------------------------
+echo "== 2/5 config"
 port="$(openclaw config get gateway.port)"
 # Exit 0 if something accepts TCP connections on the Gateway port.
 gateway_up() {
@@ -85,13 +77,27 @@ gateway_up() {
 }
 openclaw gateway stop "${STOP_FLAGS[@]}" || true
 for _ in $(seq 1 15); do gateway_up || break; sleep 1; done
-gateway_up && die "the Gateway is still running, so the config patch was not applied. Rerun from an interactive WSL shell, or with --force-restart."
+gateway_up && die "the Gateway is still running, so the config was not applied. Rerun from an interactive WSL shell, or with --force-restart."
 trap 'echo "   restarting Gateway after failure" >&2; openclaw gateway start >/dev/null || true' EXIT
+for id in "${RELOCATE[@]}"; do
+  openclaw config set "agents.entries.$id.workspace" "$(node -p 'JSON.stringify(process.argv[1])' "$(workspace_dir "$id")")" --strict-json >/dev/null
+  echo "   $id workspace -> $(workspace_dir "$id")"
+done
 openclaw config patch --file "$PATCH" --dry-run >/dev/null || die "config patch dry run failed: $PATCH"
 openclaw config patch --file "$PATCH" >/dev/null
 trap - EXIT
 openclaw gateway start >/dev/null
 echo "   applied $PATCH"
+
+# --- 3. verify workspaces ------------------------------------------------------
+echo "== 3/5 workspaces"
+load_workspaces
+for id in "${AGENTS[@]}"; do
+  [ "${WS[$id]:-}" = "$(workspace_dir "$id")" ] || die "$id workspace is ${WS[$id]:-unset}, expected $(workspace_dir "$id")"
+  # BOOTSTRAP.md is OpenClaw's first-run ritual; it would derail structured tool calls.
+  rm -f "$(workspace_dir "$id")/BOOTSTRAP.md"
+  echo "   $id: $(workspace_dir "$id")"
+done
 
 # --- 4. agent targets ----------------------------------------------------------
 echo "== 4/5 GET /v1/models"
