@@ -10,9 +10,9 @@
   {
     "id": "verification_confirmed",
     "source": "email",
-    "sender": "finaid@gtlstate.example",
+    "sender": "finaid@gsu.example",
     "subject": "Verification documents received",
-    "body": "Dear Princy,\n\nWe have received your verification documents (2025 IRS Tax Return Transcript and 2026-27 Verification Worksheet). Your verification is complete and the hold on your financial aid has been released. Your aid will disburse in the next cycle.\n\nOffice of Financial Aid\nGT-like State University",
+    "body": "Dear Princy,\n\nWe have received your verification documents (2025 IRS Tax Return Transcript and 2026-27 Verification Worksheet). Your verification is complete and the hold on your financial aid has been released. Your aid will disburse in the next cycle.\n\nOffice of Financial Aid\nGeorgia State University",
     "received_at_offset_hours": 0
   },
   {

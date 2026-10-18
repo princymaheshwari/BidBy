@@ -7,7 +7,7 @@ import { resolve } from "node:path";
 import { nyWallClock } from "../core/src/nytime.js";
 
 const BASE = process.env.BIDBY_URL ?? "http://127.0.0.1:8787";
-const USE_CASE_FIXTURES = new Set(["verification", "card_statement", "card_reminder", "subs_renewal", "scholarship_slack", "reimbursement_travel", "ta_timesheet"]);
+const USE_CASE_FIXTURES = new Set(["verification", "tuition_due", "card_statement", "card_reminder", "subs_renewal", "scholarship_slack", "reimbursement_travel", "ta_timesheet"]);
 
 interface BidbyEvent { id: string; type: string; payload: Record<string, any>; at: string }
 interface Obligation { id: string; title: string; status: string; amount_at_risk_usd: number; snoozed_until: string | null; source_message_ids: string[] }
@@ -79,9 +79,9 @@ async function main(): Promise<void> {
   const state0 = await api("GET", "/api/demo/state").catch((err: Error) => {
     throw new Error(`no BidBy server at ${BASE} (${err.message})`);
   });
-  if (state0.voice_mode !== "mock" || state0.messaging_mode !== "log") {
-    throw new Error(`refusing to run: the server has VOICE_MODE=${state0.voice_mode}, MESSAGING_MODE=${state0.messaging_mode}; ` +
-      "start it with VOICE_MODE=mock MESSAGING_MODE=log (a scratch DB_PATH is a good idea too)");
+  if (state0.voice_mode !== "mock" || state0.messaging_mode !== "log" || state0.email_mode !== "log") {
+    throw new Error(`refusing to run: the server has VOICE_MODE=${state0.voice_mode}, MESSAGING_MODE=${state0.messaging_mode}, ` +
+      `EMAIL_MODE=${state0.email_mode}; start it with VOICE_MODE=mock MESSAGING_MODE=log EMAIL_MODE=log (a scratch DB_PATH is a good idea too)`);
   }
   void followEvents().catch((err) => console.error(`event stream: ${err.message}`));
   await new Promise((r) => setTimeout(r, 500));

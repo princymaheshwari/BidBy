@@ -2,8 +2,8 @@
 
 *Demo content for BidBy. Fictional student; no real personal data.*
 
-Sophomore, B.S. Computer Science, GT-like State University (expected May 2029) · GPA 3.6
-princy.maheshwari@gtlstate.example
+Sophomore, B.S. Computer Science, Georgia State University (expected May 2029) · GPA 3.6
+princy.maheshwari@gsu.example
 
 ## Experience
 - **Undergraduate Researcher, Retrieval & Language Lab (PI: Dr. Maya Chen)** — Jan 2026 to present. Ablation studies for retrieval-augmented generation; presented a poster at the Regional Undergraduate Research Conference (Sept 2026).

@@ -141,3 +141,13 @@ test("send, yes and send it mean send; the draft footer offers it only for an al
   assert.equal(draftFooter("aid@x.edu", "me@gmail.com", true), "Reply send and I'll email it to aid@x.edu from me@gmail.com.");
   assert.equal(draftFooter("aid@x.edu", null, false), "I'm not set up to email aid@x.edu. Copy it into your email to send it.");
 });
+
+test("a tuition balance reads as money owed with the class-cancellation risk, not aid on hold", () => {
+  const tuition = { title: "Fall 2026 tuition balance", domain: "aid" as const, amount_at_risk_usd: 4800, deadline_at: "2026-10-18T23:59:00-04:00" };
+  assert.equal(
+    interruptText(tuition, at),
+    "Fall 2026 tuition balance: $4,800 is due, or your classes may be canceled.\n" +
+      "Due tonight 11:59 PM.\n" +
+      "Reply 1 for a drafted email to Student Financial Services, 2 for your payment options.",
+  );
+});

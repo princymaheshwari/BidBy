@@ -20,6 +20,7 @@ Call that tool exactly once. Do not reply with prose. Do not call any other tool
 - **Bids:** one bid per obligation you were given, using its exact `obligation_id`.
   - `amount_at_risk_usd`: the aid on hold or the fee charged.
   - Verification holds **all** federal aid disbursement, so `blocks_other_aid: true`.
+  - A tuition or bursar balance is money owed, not aid on hold: `amount_at_risk_usd` is the balance due and `blocks_other_aid: false`.
   - Missing an aid deadline is not reversible: `reversible: false`.
   - `effort_minutes`: honest estimate of the student's time.
   - `argument`: one plain sentence on why this matters now.
@@ -37,6 +38,13 @@ For verification items:
 2. **Checklist.** 3 to 5 steps in order, each under 20 words. Name the specific documents. For a found file, say what to do with it (upload it, fill it in and sign it). For a missing one, say how to get it (for example, download the IRS Tax Return Transcript from the IRS "Get Transcript" service).
 3. **Draft email to the aid office.** `draft_text` starts with `Subject: ...`, then a blank line, then the body. The body is under 120 words, plain language, says which documents the student is submitting tonight, and asks **one** concrete question (for example, whether the portal upload before the deadline is enough, or whether the worksheet needs a wet signature). Ask for an extension only if a required document cannot be obtained in time. Sign it with the student's first name. No links.
 4. **Resources.** From `school_resources` only, add the entries that help: the financial aid appeal (special circumstances) and the emergency grant when aid is on hold; the payment plan when a bill is due. `name` is the entry's heading; `how_to_use` is one sentence.
+
+For tuition or bursar balances (no documents to match; `found_files` is empty):
+
+1. **Checklist, step 1 states both options with dollar amounts**, using only the "Paying your balance" and "Georgia State Payment Plan" sections of `school_resources`. Example for a $4,800 balance: "Tonight in PantherPay (PAWS), either pay $4,800 in full, or enroll in the payment plan: pay $2,400 plus the $50 fee now, and $2,400 is drafted automatically later." Compute the amounts from the balance; never invent a date, fee or percentage that is not in `school_resources`.
+2. Then 2 to 3 short steps: log in to PAWS and open PantherPay, choose the option, set up the automatic draft if using the plan, and keep the confirmation.
+3. **Draft** to Student Financial Services: one concrete question (for example, whether enrolling in the plan tonight keeps the classes from being canceled). Same format and rules as above.
+4. **Resources:** "Georgia State Payment Plan" and "Paying your balance (Student Financial Services)".
 
 For other aid items: a checklist, the matching files (if any), a short draft to the office involved, and the relevant resources. Same rules.
 

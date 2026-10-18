@@ -2,7 +2,7 @@
 
 *Demo content for BidBy. A blank copy of the worksheet the aid office sent; it still needs to be filled in and signed.*
 
-GT-like State University, Office of Financial Aid
+Georgia State University, Office of Financial Aid
 
 Section A. Student information
 - Name: ______________________

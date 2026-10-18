@@ -2,7 +2,7 @@
 
 *Demo placeholder for BidBy. Stands in for a photo of the student's ID card; contains no real personal data.*
 
-- GT-like State University Student ID
+- Georgia State University Student ID
 - Name: Princy Maheshwari
-- ID: GTL-000000
+- ID: 002000000
 - Expires: 05/2029

@@ -33,6 +33,8 @@ export function obligationDetails(obligationId: string) {
     missing_docs: missing,
     next_step: hs?.checklist[0] ?? ob.required_action,
     checklist: hs?.checklist.slice(0, 4) ?? [],
+    // What the school offers (e.g. pay in full or the payment plan), from the head start's resources.
+    options: hs?.resources.map((r) => `${r.name}: ${r.how_to_use}`) ?? [],
   };
 }
 

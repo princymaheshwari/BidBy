@@ -10,7 +10,7 @@
   {
     "id": "pi_ablations",
     "source": "email",
-    "sender": "Dr. Maya Chen <mchen@cs.gtlstate.example>",
+    "sender": "Dr. Maya Chen <mchen@cs.gsu.example>",
     "subject": "Re: ablation results for the workshop paper",
     "body": "Hi Princy,\n\nThanks for the first ablation table, this is a great start. Two asks before Thursday's lab meeting ({{day:+4@14:00}}):\n\n1. Rerun the retrieval ablation with 3 seeds so we can report error bars.\n2. Add the no-reranker baseline to Table 2.\n\nIf the cluster queue is slow, ping me and I'll bump your priority.\n\nMaya",
     "received_at_offset_hours": -56
@@ -26,7 +26,7 @@
   {
     "id": "hw_cs3510",
     "source": "email",
-    "sender": "notifications@canvas.gtlstate.example",
+    "sender": "notifications@canvas.gsu.example",
     "subject": "Assignment due soon: CS 3510 Problem Set 4 (Dynamic Programming)",
     "body": "CS 3510 Design and Analysis of Algorithms\n\nProblem Set 4 (Dynamic Programming) is due {{day:+1@23:59}}. Submit a single PDF on Gradescope. Late submissions lose 10% per day.\n\nOffice hours this week: Mon and Wed, 3 to 5 PM, Klaus 1116.",
     "received_at_offset_hours": -48
@@ -34,8 +34,8 @@
   {
     "id": "newsletter_campus",
     "source": "email",
-    "sender": "news@gtlstate.example",
-    "subject": "This Week at GT-like State: homecoming, study rooms, and more",
+    "sender": "news@gsu.example",
+    "subject": "This Week at Georgia State: homecoming, study rooms, and more",
     "body": "Homecoming parade is Saturday at 10 AM on Central Avenue. The library added 12 bookable study rooms on floor 3. The dining hall is trying out late-night hours through November. Have a great week!",
     "received_at_offset_hours": -46
   },
@@ -50,7 +50,7 @@
   {
     "id": "meet_invite",
     "source": "email",
-    "sender": "Maya Chen (via Google Calendar) <calendar-notification@gtlstate.example>",
+    "sender": "Maya Chen (via Google Calendar) <calendar-notification@gsu.example>",
     "subject": "Invitation: Research sync, Princy / Dr. Chen @ {{day:+2@15:00}} (Google Meet)",
     "body": "Maya Chen has invited you to an event.\n\nResearch sync: Princy / Dr. Chen\nWhen: {{day:+2@15:00}} (30 min)\nJoining info: Google Meet, meet.google.com/xyz-abcd-efg\n\nAgenda: ablation status, workshop paper timeline, summer research plans.\n\nGoing? Yes · No · Maybe",
     "received_at_offset_hours": -40
@@ -58,7 +58,7 @@
   {
     "id": "slack_lab_gpu",
     "source": "slack",
-    "sender": "Arjun Patel (#research-lab, GT-like State CS Slack)",
+    "sender": "Arjun Patel (#research-lab, Georgia State CS Slack)",
     "subject": "GPU cluster maintenance Saturday",
     "body": "Heads up: the lab GPU cluster is down for maintenance Saturday 8 AM to noon. Checkpoint your jobs Friday night. Queue should be quiet after that if anyone needs to run seeds.",
     "received_at_offset_hours": -34
@@ -66,7 +66,7 @@
   {
     "id": "scholarship_slack",
     "source": "slack",
-    "sender": "Dana Okafor (#opportunities, GT-like State CS Slack)",
+    "sender": "Dana Okafor (#opportunities, Georgia State CS Slack)",
     "subject": "Undergraduate Research Excellence Award: $2,500, due soon",
     "body": "@Princy this one has your name on it 👀 The Undergraduate Research Excellence Award is $2,500 for CS undergrads who presented at a research conference this year and work with a faculty mentor. Applications are due {{day:+2@17:00}} in the department scholarship portal. You need a current resume, a 300-word research statement, and a short note from your PI. Only 3 people applied last year!",
     "received_at_offset_hours": -30
@@ -82,7 +82,7 @@
   {
     "id": "reimbursement_travel",
     "source": "email",
-    "sender": "travel@gtlstate.example",
+    "sender": "travel@gsu.example",
     "subject": "Reminder: file your conference travel reimbursement",
     "body": "Hi Princy,\n\nOur records show you traveled to the Regional Undergraduate Research Conference. You are eligible for a reimbursement of $640 for registration and lodging.\n\nReimbursement requests must be filed in the travel portal with receipts by {{day:+5@17:00}}. Requests filed after the window closes cannot be paid.\n\nUniversity Travel Office",
     "received_at_offset_hours": -26
@@ -98,7 +98,7 @@
   {
     "id": "career_fair",
     "source": "email",
-    "sender": "careers@gtlstate.example",
+    "sender": "careers@gsu.example",
     "subject": "Fall Career Fair is next week",
     "body": "Over 120 employers will be at the Fall Career Fair in the Campus Rec Center next Wednesday from 10 AM to 3 PM. Bring copies of your resume. Business casual recommended.",
     "received_at_offset_hours": -18
@@ -106,7 +106,7 @@
   {
     "id": "pi_reading",
     "source": "email",
-    "sender": "Dr. Maya Chen <mchen@cs.gtlstate.example>",
+    "sender": "Dr. Maya Chen <mchen@cs.gsu.example>",
     "subject": "Lab meeting: room change + reading for Thursday",
     "body": "Hi all,\n\nThursday's lab meeting moves to Klaus 2443. Please read the RAG-evaluation survey before then (link in the lab drive) and come with one question. Princy, you're presenting the ablation results for 10 minutes.\n\nMaya",
     "received_at_offset_hours": -14
@@ -122,15 +122,23 @@
   {
     "id": "ta_timesheet",
     "source": "email",
-    "sender": "payroll@gtlstate.example",
+    "sender": "payroll@gsu.example",
     "subject": "Action needed: submit your TA timesheet",
     "body": "Hi Princy,\n\nYour teaching assistant timesheet for the current pay period (estimated pay: $380) has not been submitted. Timesheets must be submitted and approved in the payroll portal by {{day:+3@17:00}}. Hours not submitted by the deadline will not be paid this pay period.\n\nUniversity Payroll",
     "received_at_offset_hours": -8
   },
   {
+    "id": "tuition_due",
+    "source": "email",
+    "sender": "Student Financial Services, Georgia State University <sfs@gsu.example>",
+    "subject": "Final reminder: your Fall 2026 balance is due tonight",
+    "body": "Hi Princy,\n\nYour Fall 2026 student account has a balance of $4,800.00 for tuition and mandatory fees. Payment is due {{day:+0@23:59}}.\n\nIf payment or an approved payment arrangement is not in place by the due date, your class registration may be canceled for non-payment.\n\nMake a payment in PantherPay through PAWS.\n\nStudent Financial Services\nGeorgia State University",
+    "received_at_offset_hours": -7
+  },
+  {
     "id": "slack_study_group",
     "source": "slack",
-    "sender": "Lena Brooks (#cs3510, GT-like State CS Slack)",
+    "sender": "Lena Brooks (#cs3510, Georgia State CS Slack)",
     "subject": "PS4 study group?",
     "body": "Anyone want to work through PS4 together? I booked a library room on floor 3 for Monday 6 to 8 PM. Reply here and I'll add you.",
     "received_at_offset_hours": -6
@@ -138,9 +146,9 @@
   {
     "id": "verification",
     "source": "email",
-    "sender": "finaid@gtlstate.example",
+    "sender": "finaid@gsu.example",
     "subject": "Action required: you've been selected for FAFSA verification",
-    "body": "Dear Princy,\n\nYour 2026-27 FAFSA has been selected for verification. Until verification is complete, your financial aid of $3,700 (Federal Pell Grant $2,900 and State Opportunity Grant $800) is on hold and will not be disbursed.\n\nPlease submit the following documents in the Financial Aid Portal by {{day:+0@23:59}}:\n1. 2025 IRS Tax Return Transcript\n2. 2026-27 Verification Worksheet (signed)\n\nIf we do not receive both documents by the deadline, your aid may be cancelled for the term.\n\nQuestions? Reply to this email or visit the Office of Financial Aid, Student Services Building, Room 110.\n\nOffice of Financial Aid\nGT-like State University",
+    "body": "Dear Princy,\n\nYour 2026-27 FAFSA has been selected for verification. Until verification is complete, your financial aid of $3,700 (Federal Pell Grant $2,900 and State Opportunity Grant $800) is on hold and will not be disbursed.\n\nPlease submit the following documents in the Financial Aid Portal by {{day:+0@23:59}}:\n1. 2025 IRS Tax Return Transcript\n2. 2026-27 Verification Worksheet (signed)\n\nIf we do not receive both documents by the deadline, your aid may be cancelled for the term.\n\nQuestions? Reply to this email or visit the Office of Financial Aid, Student Services Building, Room 110.\n\nOffice of Financial Aid\nGeorgia State University",
     "received_at_offset_hours": -5
   },
   {

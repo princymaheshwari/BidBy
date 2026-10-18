@@ -174,6 +174,7 @@ app.get("/api/demo/state", (c) => {
     protected_total: protectedTotal(),
     voice_mode: config.VOICE_MODE,
     messaging_mode: config.MESSAGING_MODE,
+    email_mode: config.EMAIL_MODE,
     held: loadHeld().map((f) => ({ id: f.id, subject: f.subject, injected: injected.has(f.id) })),
   });
 });

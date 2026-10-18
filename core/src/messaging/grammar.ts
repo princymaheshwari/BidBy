@@ -21,6 +21,15 @@ const DOMAIN_COPY: Record<Domain, { risk: string; draft: string; checklist: stri
   money_in: { risk: "is waiting to be claimed", draft: "a drafted claim message", checklist: "the claim checklist" },
 };
 
+// Aid owns bursar items too, but a tuition bill is money owed, not aid on hold.
+const TUITION_COPY = {
+  risk: "is due, or your classes may be canceled",
+  draft: "a drafted email to Student Financial Services",
+  checklist: "your payment options",
+};
+const copyFor = (item: Item) =>
+  item.domain === "aid" && /\b(tuition|bursar|balance)\b/i.test(item.title) ? TUITION_COPY : DOMAIN_COPY[item.domain];
+
 function due(item: Item, at: Date): string {
   const deadline = new Date(item.deadline_at);
   const when = formatWhenNY(deadline, at);
@@ -44,7 +53,7 @@ const fileName = (path: string) => path.replace(/^.*[\/]/, "");
  * Reply 1 for a drafted email to the aid office, 2 for the document checklist.
  */
 export function interruptText(item: Item, at: Date, docs?: DocsReport): string {
-  const copy = DOMAIN_COPY[item.domain];
+  const copy = copyFor(item);
   const lines = [`${item.title}: ${money(item.amount_at_risk_usd)} ${copy.risk}.`, `${due(item, at)}.`];
   if (docs?.docs.length) {
     lines.push(`Your documents are in ${docs.folder}`);

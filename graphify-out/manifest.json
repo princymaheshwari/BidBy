@@ -24,9 +24,9 @@
     "semantic_hash": ""
   },
   "core/src/config.ts": {
-    "mtime": 1792317295.8168828,
-    "seen": 1792318122.628809,
-    "ast_hash": "b907a522cc6969b52d3fb616d1336409",
+    "mtime": 1792330672.0776317,
+    "seen": 1792332808.602724,
+    "ast_hash": "35a87db91b5cfbf4b254fa38d562aa73",
     "semantic_hash": ""
   },
   "core/src/db.ts": {
@@ -36,9 +36,9 @@
     "semantic_hash": ""
   },
   "core/src/escalation/timer.ts": {
-    "mtime": 1792324771.2724507,
-    "seen": 1792325297.1073797,
-    "ast_hash": "f67286398118fecbcc8f54b03584f3c9",
+    "mtime": 1792330348.57515,
+    "seen": 1792332808.60273,
+    "ast_hash": "a6164819ff467345b532c12f3d48704f",
     "semantic_hash": ""
   },
   "core/src/events.ts": {
@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "core/src/messaging/replies.ts": {
-    "mtime": 1792310223.197708,
-    "seen": 1792310410.6476123,
-    "ast_hash": "3b24c8e6f91454c7113ab1bd53a5e0a8",
+    "mtime": 1792330672.079767,
+    "seen": 1792332808.6027455,
+    "ast_hash": "560ccfb0c3b37f604e1eea4eaa4168b8",
     "semantic_hash": ""
   },
   "core/src/messaging/spectrum.ts": {
@@ -66,9 +66,9 @@
     "semantic_hash": ""
   },
   "core/src/pipeline/headstart.ts": {
-    "mtime": 1792310201.269179,
-    "seen": 1792310410.647618,
-    "ast_hash": "b0148ef5c1b8e5d324cc01753b919c32",
+    "mtime": 1792330672.0776317,
+    "seen": 1792332808.6027546,
+    "ast_hash": "5ec8f7d49131d1717302e031e954b1cf",
     "semantic_hash": ""
   },
   "core/src/pipeline/ingest.ts": {
@@ -102,9 +102,9 @@
     "semantic_hash": ""
   },
   "core/src/server.ts": {
-    "mtime": 1792327161.7475138,
-    "seen": 1792327378.234641,
-    "ast_hash": "4ac1f96d1031f13e7d489a6df0bc78d9",
+    "mtime": 1792332631.9994657,
+    "seen": 1792332808.6027663,
+    "ast_hash": "d5d2e06bce1ec0595a494b8df4ef5a6e",
     "semantic_hash": ""
   },
   "core/src/voice/elevenlabs.ts": {
@@ -120,15 +120,15 @@
     "semantic_hash": ""
   },
   "fixtures/held.json": {
-    "mtime": 1792326735.8081942,
-    "seen": 1792327378.2346516,
-    "ast_hash": "64af28580f326b999a7ab14f7e5dd75b",
+    "mtime": 1792332339.646266,
+    "seen": 1792332808.6027858,
+    "ast_hash": "f0b2dac80df7461c6ae73b7e92bbcbf6",
     "semantic_hash": ""
   },
   "fixtures/inbox.json": {
-    "mtime": 1792326735.2026823,
-    "seen": 1792327378.2346525,
-    "ast_hash": "6e5bb2cfdba990714f45bcb6dfb53f1c",
+    "mtime": 1792332339.8711112,
+    "seen": 1792332808.6027873,
+    "ast_hash": "1e9c0dc88dc2792433f3d754044f1019",
     "semantic_hash": ""
   },
   "openclaw/config.patch.json": {
@@ -138,9 +138,9 @@
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1792324413.5461838,
-    "seen": 1792324472.9476874,
-    "ast_hash": "8a165521840609c26b47c774094b6317",
+    "mtime": 1792329915.943516,
+    "seen": 1792332808.6027906,
+    "ast_hash": "5d27a97b6c093cb22fce53d8b0595d36",
     "semantic_hash": ""
   },
   "scripts/setup-openclaw.sh": {
@@ -150,9 +150,9 @@
     "semantic_hash": ""
   },
   "scripts/smoke.ts": {
-    "mtime": 1792324967.9196064,
-    "seen": 1792325297.1074262,
-    "ast_hash": "c64bea65c9b951b63fc3e9f8912820b1",
+    "mtime": 1792332632.0003636,
+    "seen": 1792332808.6027944,
+    "ast_hash": "5c3949a248aacb96ecbae988e1336b00",
     "semantic_hash": ""
   },
   "tsconfig.json": {
@@ -162,15 +162,15 @@
     "semantic_hash": ""
   },
   "core/public/index.html": {
-    "mtime": 1792327006.909932,
-    "seen": 1792327378.2346604,
-    "ast_hash": "860a970cb9d7a387314aa3941d390bfb",
+    "mtime": 1792330421.8168864,
+    "seen": 1792332808.6028023,
+    "ast_hash": "e5eeb821d5e76ffdd1aafe18c5bb7adf",
     "semantic_hash": ""
   },
   "openclaw/agents/aid/AGENTS.md": {
-    "mtime": 1792326824.7511065,
-    "seen": 1792327378.234663,
-    "ast_hash": "4a32acca5b8ba66370946c9ef1476756",
+    "mtime": 1792332360.108369,
+    "seen": 1792332808.6028075,
+    "ast_hash": "1fb819850461d386d5b95cba8da826a1",
     "semantic_hash": ""
   },
   "openclaw/agents/coordinator/AGENTS.md": {
@@ -180,9 +180,9 @@
     "semantic_hash": ""
   },
   "openclaw/agents/credit/AGENTS.md": {
-    "mtime": 1792326824.7521071,
-    "seen": 1792327378.23467,
-    "ast_hash": "edfe0e2fd2cbc4626dd0380b95317d62",
+    "mtime": 1792330672.079767,
+    "seen": 1792332808.6028204,
+    "ast_hash": "13944a0f747a516f3a055bbca4e69c98",
     "semantic_hash": ""
   },
   "openclaw/agents/extractor/AGENTS.md": {
@@ -192,27 +192,27 @@
     "semantic_hash": ""
   },
   "openclaw/agents/money_in/AGENTS.md": {
-    "mtime": 1792326824.7521071,
-    "seen": 1792327378.2346714,
-    "ast_hash": "57b161204b2a311cb1526f7d715c757c",
+    "mtime": 1792330672.0818937,
+    "seen": 1792332808.6028237,
+    "ast_hash": "f0f360730399bf19d8db6fec7f05c5d7",
     "semantic_hash": ""
   },
   "openclaw/agents/subs/AGENTS.md": {
-    "mtime": 1792326824.7521071,
-    "seen": 1792327378.234672,
-    "ast_hash": "7c73636ef15e3db12819ac733d420c98",
+    "mtime": 1792330672.0818937,
+    "seen": 1792332808.6028254,
+    "ast_hash": "d6263cd271fc8e58143ba47d3fa0a45b",
     "semantic_hash": ""
   },
   "core/src/messaging/grammar.test.ts": {
-    "mtime": 1792310260.6000028,
-    "seen": 1792310410.6476104,
-    "ast_hash": "0dbce50bbed6d0ab34b1a6233f3464ff",
+    "mtime": 1792332375.152682,
+    "seen": 1792332808.602742,
+    "ast_hash": "762420488783bac6af2430857258ac98",
     "semantic_hash": ""
   },
   "core/src/messaging/grammar.ts": {
-    "mtime": 1792317477.1631804,
-    "seen": 1792318122.6289303,
-    "ast_hash": "67529d5a87f145e9d03dcb948fb41adc",
+    "mtime": 1792332375.1517558,
+    "seen": 1792332808.6027439,
+    "ast_hash": "b492a0bbdcb24b87c384247d67fbc08d",
     "semantic_hash": ""
   },
   "core/src/nytime.ts": {
@@ -222,15 +222,15 @@
     "semantic_hash": ""
   },
   "core/src/pipeline/docs.test.ts": {
-    "mtime": 1792310178.496116,
-    "seen": 1792310410.6476154,
-    "ast_hash": "38d7fff70c68270cd93a2504a13c2935",
+    "mtime": 1792330450.7174203,
+    "seen": 1792332808.6027515,
+    "ast_hash": "e5594402daa6b09ea2390174b070c1f1",
     "semantic_hash": ""
   },
   "core/src/pipeline/docs.ts": {
-    "mtime": 1792310178.451886,
-    "seen": 1792310410.647617,
-    "ast_hash": "4d1c5cc6480367ecfe05721ab6177554",
+    "mtime": 1792330298.8531587,
+    "seen": 1792332808.602753,
+    "ast_hash": "02b9af79d5ef6bb502016e7203d8214e",
     "semantic_hash": ""
   },
   "openclaw/agents/aid/docs/2025_tax_return_transcript_PLACEHOLDER.md": {
@@ -240,27 +240,27 @@
     "semantic_hash": ""
   },
   "openclaw/agents/aid/docs/resume.md": {
-    "mtime": 1792326824.7531075,
-    "seen": 1792327378.2346647,
-    "ast_hash": "5add064f482c23205584de4115d111db",
+    "mtime": 1792332339.6760335,
+    "seen": 1792332808.6028109,
+    "ast_hash": "93ef2ea67b6466a5bad84908bd6db666",
     "semantic_hash": ""
   },
   "openclaw/agents/aid/docs/school_resources.md": {
-    "mtime": 1792310159.526253,
-    "seen": 1792310410.647637,
-    "ast_hash": "df3ffe6e08229cb3b075cdaae91a417c",
+    "mtime": 1792332349.7098117,
+    "seen": 1792332808.602813,
+    "ast_hash": "7d377419a65fe9f01b0b8718d793995c",
     "semantic_hash": ""
   },
   "openclaw/agents/aid/docs/student_id_scan_PLACEHOLDER.md": {
-    "mtime": 1792326824.7531075,
-    "seen": 1792327378.234667,
-    "ast_hash": "4234f62daf23f116e8b927c8755545b7",
+    "mtime": 1792332339.7025547,
+    "seen": 1792332808.602815,
+    "ast_hash": "4c3815ca1e63278db3868f262b7238d1",
     "semantic_hash": ""
   },
   "openclaw/agents/aid/docs/verification_worksheet_v1_blank.md": {
-    "mtime": 1792310159.4893036,
-    "seen": 1792310410.6476393,
-    "ast_hash": "0b758f868c7ffd81f93ce82d96a70dfa",
+    "mtime": 1792332339.726218,
+    "seen": 1792332808.6028166,
+    "ast_hash": "d4a46b2cd85648fba3adf85c03145995",
     "semantic_hash": ""
   },
   "core/src/voice/calls.test.ts": {
@@ -300,9 +300,9 @@
     "semantic_hash": ""
   },
   "core/src/voice/tools.ts": {
-    "mtime": 1792317508.9244003,
-    "seen": 1792318122.6290686,
-    "ast_hash": "5bb341beabfce1a5f603fe1f388c7c22",
+    "mtime": 1792332375.152682,
+    "seen": 1792332808.6027837,
+    "ast_hash": "a87cb547e638fdc4425c38d66da774ab",
     "semantic_hash": ""
   },
   "core/public/phone.html": {
@@ -324,9 +324,21 @@
     "semantic_hash": ""
   },
   "core/public/intake.html": {
-    "mtime": 1792327341.614543,
-    "seen": 1792327378.234661,
-    "ast_hash": "00ecf9caaee607dceb7757da0095f5e6",
+    "mtime": 1792332339.7583683,
+    "seen": 1792332808.6028037,
+    "ast_hash": "defab86867147b99e94324bd11d1b11c",
+    "semantic_hash": ""
+  },
+  "core/src/messaging/email.test.ts": {
+    "mtime": 1792330450.766876,
+    "seen": 1792332808.602737,
+    "ast_hash": "10a6bf4150748e621917062eb240ce9b",
+    "semantic_hash": ""
+  },
+  "core/src/messaging/email.ts": {
+    "mtime": 1792330327.7086115,
+    "seen": 1792332808.602739,
+    "ast_hash": "026f39fdc577ff4df7e9b8448df3859b",
     "semantic_hash": ""
   }
 }
