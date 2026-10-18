@@ -1,1 +1,63 @@
-{}
+{
+  "gateway": {
+    "bind": "loopback",
+    "auth": { "mode": "token" },
+    "http": {
+      "endpoints": {
+        "chatCompletions": { "enabled": true }
+      }
+    }
+  },
+  "agents": {
+    "entries": {
+      "extractor": {
+        "identity": { "name": "BidBy Extractor", "emoji": "📥", "theme": "precise, skeptical reader of money messages" },
+        "skills": [],
+        "subagents": { "allowAgents": [] },
+        "tools": {
+          "deny": ["group:runtime", "group:fs", "group:web", "group:ui", "group:automation", "group:messaging", "group:nodes", "group:sessions", "group:memory", "group:agents", "group:media", "group:plugins", "group:openclaw"]
+        }
+      },
+      "aid": {
+        "identity": { "name": "BidBy Aid", "emoji": "🎓", "theme": "plain-language financial aid guide" },
+        "skills": [],
+        "subagents": { "allowAgents": [] },
+        "tools": {
+          "deny": ["write", "edit", "apply_patch", "group:runtime", "group:web", "group:ui", "group:automation", "group:messaging", "group:nodes", "group:sessions", "group:memory", "group:agents", "group:media", "group:plugins", "group:openclaw"]
+        }
+      },
+      "credit": {
+        "identity": { "name": "BidBy Credit", "emoji": "💳", "theme": "calm first-credit-card coach" },
+        "skills": [],
+        "subagents": { "allowAgents": [] },
+        "tools": {
+          "deny": ["group:runtime", "group:fs", "group:web", "group:ui", "group:automation", "group:messaging", "group:nodes", "group:sessions", "group:memory", "group:agents", "group:media", "group:plugins", "group:openclaw"]
+        }
+      },
+      "subs": {
+        "identity": { "name": "BidBy Subscriptions", "emoji": "🔁", "theme": "blunt keep-or-cancel helper" },
+        "skills": [],
+        "subagents": { "allowAgents": [] },
+        "tools": {
+          "deny": ["group:runtime", "group:fs", "group:web", "group:ui", "group:automation", "group:messaging", "group:nodes", "group:sessions", "group:memory", "group:agents", "group:media", "group:plugins", "group:openclaw"]
+        }
+      },
+      "money_in": {
+        "identity": { "name": "BidBy Money In", "emoji": "💵", "theme": "upbeat claim-what-is-yours helper" },
+        "skills": [],
+        "subagents": { "allowAgents": [] },
+        "tools": {
+          "deny": ["group:runtime", "group:fs", "group:web", "group:ui", "group:automation", "group:messaging", "group:nodes", "group:sessions", "group:memory", "group:agents", "group:media", "group:plugins", "group:openclaw"]
+        }
+      },
+      "coordinator": {
+        "identity": { "name": "BidBy Coordinator", "emoji": "⚖️", "theme": "two-sentence explainer of the ranking" },
+        "skills": [],
+        "subagents": { "allowAgents": [] },
+        "tools": {
+          "deny": ["group:runtime", "group:fs", "group:web", "group:ui", "group:automation", "group:messaging", "group:nodes", "group:sessions", "group:memory", "group:agents", "group:media", "group:plugins", "group:openclaw"]
+        }
+      }
+    }
+  }
+}

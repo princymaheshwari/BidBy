@@ -28,7 +28,7 @@ const Env = z.object({
   ELEVENLABS_PHONE_NUMBER_ID: optional,
   ELEVENLABS_WEBHOOK_SECRET: optional,
   BIDBY_TOOL_SECRET: optional,
-  VOICE_MODE: z.enum(["sip", "dashboard"]).default("sip"),
+  VOICE_MODE: z.enum(["live", "mock", "dashboard"]).default("live"),
 
   PORT: z.coerce.number().int().positive().default(8787),
 });
