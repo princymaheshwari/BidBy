@@ -134,6 +134,11 @@ if (!outboundSql.includes("'reply'")) {
   }
 }
 
+// Spec 06 added calls.provider (twilio, sip, mock, browser) and calls.provider_call_id (Twilio callSid or SIP sip_call_id).
+const callColumns = (db.prepare("PRAGMA table_info(calls)").all() as { name: string }[]).map((c) => c.name);
+if (!callColumns.includes("provider")) db.exec("ALTER TABLE calls ADD COLUMN provider TEXT NOT NULL DEFAULT 'mock'");
+if (!callColumns.includes("provider_call_id")) db.exec("ALTER TABLE calls ADD COLUMN provider_call_id TEXT");
+
 // settings is a single row. Seed it once; .env stays the source of truth for the phone.
 db.prepare(
   "INSERT INTO settings (user_phone) SELECT ? WHERE NOT EXISTS (SELECT 1 FROM settings)",

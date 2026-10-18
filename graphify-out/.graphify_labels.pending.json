@@ -1,5 +1,5 @@
 {
-  "0": "now",
+  "0": "BidBy Aid",
   "1": "package.json",
   "2": "server.ts",
   "3": "compilerOptions",
@@ -8,13 +8,16 @@
   "6": "2025_tax_return_transcript_PLACEHOLDER.md",
   "7": "student_id_scan_PLACEHOLDER.md",
   "8": "verification_worksheet_v1_blank.md",
+  "9": "BidBy Coordinator",
+  "10": "BidBy Credit",
   "11": "setup-openclaw.sh",
   "12": "rank.ts",
+  "13": "BidBy Money In",
   "14": "timer.ts",
   "15": "replies.ts",
   "16": "spectrum.ts",
   "17": "headstart.ts",
-  "23": "elevenlabs.ts",
-  "24": "routes.ts",
+  "18": "BidBy Subscriptions",
+  "23": "routes.ts",
   "25": "smoke.ts"
 }

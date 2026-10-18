@@ -14,12 +14,18 @@ import { startSpectrum } from "./messaging/spectrum.js";
 import { ingest } from "./pipeline/ingest.js";
 import { dismiss, getObligation, getOpen, listObligations, markDone, snooze } from "./pipeline/ledger.js";
 import { latestDecision, latestScores, rank } from "./pipeline/rank.js";
+import { completeMockCall } from "./voice/calls.js";
+import { startCall } from "./voice/elevenlabs.js";
+import { tunnelGuard, voice } from "./voice/routes.js";
 
 const INDEX_HTML = resolve(import.meta.dirname, "../public/index.html");
 const HOUR_MS = 3_600_000;
 const DEFAULT_SNOOZE_HOURS = 2;
 
 const app = new Hono();
+
+app.use("*", tunnelGuard); // through the tunnel, only /voice/* answers
+app.route("/voice", voice);
 
 app.onError((err, c) => {
   console.error(err);
@@ -124,6 +130,36 @@ app.post("/api/demo/inject", async (c) => {
   return c.json(await ingest(renderFixture(fixture, now()), { fixture_id: fixture.id }));
 });
 
+// --- voice demo controls (local only: the tunnel guard keeps /api/* off the tunnel) ---
+
+const EscalateBody = z.object({ obligation_id: z.string().optional() });
+
+// Calls now about an item (default: the top of the latest ranking that is still unfinished), skipping
+// the follow-up wait and the cooldown. For rehearsal, and a safety net if the demo timing is off.
+app.post("/api/demo/escalate", async (c) => {
+  const body = EscalateBody.safeParse(await c.req.json().catch(() => ({})));
+  if (!body.success) return c.json({ error: "body must be {obligation_id?}" }, 400);
+  const id = body.data.obligation_id
+    ?? latestDecision().ranked.map((r: { obligation_id: string }) => r.obligation_id)
+      .find((oid: string) => getOpen().some((o) => o.id === oid));
+  if (!id || !getObligation(id)) return c.json({ error: "no open obligation to call about" }, 404);
+  const call = await startCall(id, { force: true });
+  return c.json({ obligation_id: id, voice_mode: config.VOICE_MODE, call: call ?? null });
+});
+
+const CompleteBody = z.object({
+  outcome: z.enum(["completed", "no_answer", "declined"]),
+  say: z.string().optional(),
+});
+
+app.post("/api/demo/calls/:conversationId/complete", async (c) => {
+  const body = CompleteBody.safeParse(await c.req.json().catch(() => null));
+  if (!body.success) return c.json({ error: 'body must be {outcome: "completed" | "no_answer" | "declined", say?}' }, 400);
+  const r = await completeMockCall(c.req.param("conversationId"), body.data.outcome, body.data.say);
+  if (r === "unknown") return c.json({ error: "unknown mock call" }, 404);
+  return c.json(r === "already_processed" ? { ok: true, already_processed: true } : { ok: true });
+});
+
 // --- boot ---
 
 async function checkGateway(): Promise<void> {
@@ -146,7 +182,7 @@ async function checkGateway(): Promise<void> {
 
 // Loopback only: the tunnel reaches /voice/* through 127.0.0.1; nothing else is exposed.
 serve({ fetch: app.fetch, port: config.PORT, hostname: "127.0.0.1" }, (info) => {
-  console.log(`[boot] bidby-core on http://127.0.0.1:${info.port}`);
+  console.log(`[boot] bidby-core on http://127.0.0.1:${info.port} (VOICE_MODE=${config.VOICE_MODE})`);
   void checkGateway();
   startSpectrum();
   startTimer();

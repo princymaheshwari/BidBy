@@ -46,6 +46,13 @@ export function followUpText(item: Item, at: Date): string {
   return `Still open: ${item.title}, ${money(item.amount_at_risk_usd)}. ${due(item, at)}. Reply 1, 2, or done.`;
 }
 
+/** The one text after a call that didn't connect (declined, no answer, failed). */
+export function callClosingText(item: Item, at: Date): string {
+  const deadline = new Date(item.deadline_at);
+  const when = deadline.getTime() < at.getTime() ? "is overdue" : `is still due ${formatWhenNY(deadline, at)}`;
+  return `Couldn't reach you. ${item.title} ${when}. Reply 1 for the draft.`;
+}
+
 /** One line per item, at most 5. Null when there is nothing to send. */
 export function digestText(items: Item[], at: Date): string | null {
   if (items.length === 0) return null;

@@ -3,7 +3,7 @@
 // never resends a text.
 import { now } from "../clock.js";
 import {
-  DIGEST_HOUR, INTERRUPT_SCORE, MAX_FOLLOW_UPS, NO_REPLY_MINUTES, TICK_DEMO_MINUTES,
+  CALL_MAX_HOURS_LEFT, CALL_SCORE, DIGEST_HOUR, INTERRUPT_SCORE, MAX_FOLLOW_UPS, NO_REPLY_MINUTES, TICK_DEMO_MINUTES,
 } from "../config.js";
 import { db, getSettings, updateSettings } from "../db.js";
 import { digestText, followUpText, interruptText } from "../messaging/grammar.js";
@@ -12,7 +12,10 @@ import { sendToUser } from "../messaging/spectrum.js";
 import { nyDateKey, nyWallClock } from "../nytime.js";
 import { headStart } from "../pipeline/headstart.js";
 import { getObligation, isFinal, listObligations, markNotified, wake, type Obligation } from "../pipeline/ledger.js";
-import { rank } from "../pipeline/rank.js";
+import { latestScores, rank } from "../pipeline/rank.js";
+import { hoursLeft } from "../pipeline/score.js";
+import { checkCalls } from "../voice/calls.js";
+import { startCall } from "../voice/elevenlabs.js";
 
 const TICK_MS = 5_000;
 const MINUTE_MS = 60_000;
@@ -53,6 +56,7 @@ async function tickOnce(): Promise<void> {
   await step("digest", () => digest(at));
   await step("notify", () => notifyTop(now()));
   await step("follow-up", () => followUp(now()));
+  await step("calls", () => checkCalls(now()));
   lastTickAt = at;
 }
 
@@ -145,8 +149,15 @@ async function followUp(at: Date): Promise<void> {
   }
 }
 
-/** Spec 06 hook: call the user when a high-stakes item is still ignored after the follow-ups. */
-export async function maybeEscalate(_item: Obligation, _at: Date): Promise<void> {}
+/** Flow E: call the user when a high-stakes item is still ignored after the follow-ups, close to its deadline.
+ *  startCall enforces the 2-hour cooldown; the item becomes `escalated`, which ends its follow-ups. */
+export async function maybeEscalate(item: Obligation, at: Date): Promise<void> {
+  if (item.status !== "notified") return;
+  if ((latestScores()[item.id] ?? 0) < CALL_SCORE) return;
+  const left = hoursLeft(item.deadline_at, at);
+  if (left <= 0 || left >= CALL_MAX_HOURS_LEFT) return;
+  await startCall(item.id);
+}
 
 // --- digest: once a day at DIGEST_HOUR demo time, the open items below the interrupt threshold ---
 

@@ -28,7 +28,13 @@ const Env = z.object({
   ELEVENLABS_PHONE_NUMBER_ID: optional,
   ELEVENLABS_WEBHOOK_SECRET: optional,
   BIDBY_TOOL_SECRET: optional,
-  VOICE_MODE: z.enum(["live", "mock", "dashboard"]).default("live"),
+  BIDBY_PHONE_KEY: optional, // browser mode: the key in the phone page URL (?k=)
+  VOICE_MODE: z.enum(["live", "mock", "dashboard", "browser"]).default("live"),
+  VOICE_PROVIDER: z.enum(["twilio", "sip"]).default("twilio"),
+  ALLOWED_DIAL_NUMBERS: z.preprocess(
+    (v) => (typeof v === "string" ? v.split(",").map((s) => s.trim()).filter(Boolean) : []),
+    z.array(z.string().regex(/^\+[1-9]\d{6,14}$/, "each number must be E.164, e.g. +14045551234")),
+  ),
 
   PORT: z.coerce.number().int().positive().default(8787),
   DB_PATH: z.string().default("bidby.db"), // relative to the repo root; tests point this at a scratch file
@@ -42,6 +48,20 @@ if (!parsed.success) {
 }
 
 export const config = parsed.data;
+
+// Mode-specific requirements (SYSTEM_DESIGN §11). Names only, never values.
+const missing = (names: (keyof typeof config)[]) => names.filter((n) => !config[n]);
+const voiceNeeds: Record<typeof config.VOICE_MODE, (keyof typeof config)[]> = {
+  live: ["ELEVENLABS_API_KEY", "ELEVENLABS_AGENT_ID", "ELEVENLABS_PHONE_NUMBER_ID", "BIDBY_TOOL_SECRET"],
+  browser: ["ELEVENLABS_API_KEY", "ELEVENLABS_AGENT_ID", "BIDBY_TOOL_SECRET", "BIDBY_PHONE_KEY"],
+  mock: [],
+  dashboard: [],
+};
+const voiceMissing = missing(voiceNeeds[config.VOICE_MODE]);
+if (config.VOICE_MODE === "live" && config.ALLOWED_DIAL_NUMBERS.length === 0) voiceMissing.push("ALLOWED_DIAL_NUMBERS");
+if (voiceMissing.length > 0) {
+  throw new Error(`[config] VOICE_MODE=${config.VOICE_MODE} needs (see .env.example):\n${voiceMissing.map((n) => `  ${n}`).join("\n")}`);
+}
 export type Config = typeof config;
 
 // Thresholds (SYSTEM_DESIGN §8). Starting values: tune on the seeded inbox, then freeze.
@@ -56,3 +76,8 @@ export const MAX_FOLLOW_UPS = 2;          // Photon deliverability: at most 2 fo
 export const SEND_GAP_MS = 2_000;         // real time between outbound texts (no bursts)
 export const DIGEST_HOUR = 8;             // New York demo-time hour of the daily digest
 export const DEFAULT_SNOOZE_MINUTES = 120;
+
+// Voice (spec 06, SYSTEM_DESIGN §9.4, §9.5).
+export const CALL_COOLDOWN_MINUTES = 120;   // never call twice about the same item within 2 demo hours
+export const RECOVERY_AFTER_MINUTES = 8;    // no post-call webhook by then: poll the conversation
+export const RING_TIMEOUT_MS = 45_000;      // browser mode: unanswered for this long counts as no-answer

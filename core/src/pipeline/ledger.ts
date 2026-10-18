@@ -80,6 +80,15 @@ export function markNotified(id: string): Obligation | undefined {
   return notified;
 }
 
+/** BidBy is calling the user about this item (spec 06). Escalation stops on done, like notified. */
+export function markEscalated(id: string): Obligation | undefined {
+  const ob = getObligation(id);
+  if (!ob || isFinal(ob) || ob.status === "escalated") return undefined;
+  const escalated = setStatus(id, "escalated");
+  emit("obligation.escalated", { id, title: escalated.title });
+  return escalated;
+}
+
 /** A snooze ran out: the obligation is back in play as notified (the user already knows about it). */
 export function wake(id: string): Obligation | undefined {
   const ob = getObligation(id);
