@@ -144,19 +144,22 @@ async function followUp(at: Date): Promise<void> {
     if (replied) continue;
     if (at.getTime() - Date.parse(last.sent_at) < NO_REPLY_MINUTES * MINUTE_MS) continue;
 
+    // Inside the call window, an unanswered item gets a call instead of another text.
+    if (await maybeEscalate(ob, at)) continue;
     if (followUpsSent(ob.id) < MAX_FOLLOW_UPS) await sendToUser(followUpText(ob, at), "follow_up", ob.id);
-    else await maybeEscalate(ob, at);
   }
 }
 
-/** Flow E: call the user when a high-stakes item is still ignored after the follow-ups, close to its deadline.
- *  startCall enforces the 2-hour cooldown; the item becomes `escalated`, which ends its follow-ups. */
-export async function maybeEscalate(item: Obligation, at: Date): Promise<void> {
-  if (item.status !== "notified") return;
-  if ((latestScores()[item.id] ?? 0) < CALL_SCORE) return;
+/** Flow E: a notified, unanswered item is called as soon as it is inside the call window: score ≥ CALL_SCORE
+ *  and under CALL_MAX_HOURS_LEFT to its deadline. startCall enforces the 2-hour cooldown; the item becomes
+ *  `escalated`, which ends its follow-ups. Returns whether a call was placed (or handed to the dashboard). */
+export async function maybeEscalate(item: Obligation, at: Date): Promise<boolean> {
+  if (item.status !== "notified") return false;
+  if ((latestScores()[item.id] ?? 0) < CALL_SCORE) return false;
   const left = hoursLeft(item.deadline_at, at);
-  if (left <= 0 || left >= CALL_MAX_HOURS_LEFT) return;
+  if (left <= 0 || left >= CALL_MAX_HOURS_LEFT) return false;
   await startCall(item.id);
+  return getObligation(item.id)?.status === "escalated";
 }
 
 // --- digest: once a day at DIGEST_HOUR demo time, the open items below the interrupt threshold ---

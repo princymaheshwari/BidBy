@@ -6,13 +6,14 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { advance, now, setTo } from "./clock.js";
 import { config } from "./config.js";
-import { clearAll, getSettings } from "./db.js";
+import { clearAll, db, getSettings, newId } from "./db.js";
 import { startTimer, tick } from "./escalation/timer.js";
 import { emit, eventsStream } from "./events.js";
-import { findFixture, loadInbox, renderFixture } from "./fixtures.js";
+import { findFixture, loadHeld, loadInbox, renderFixture } from "./fixtures.js";
+import { handleReply } from "./messaging/replies.js";
 import { startSpectrum } from "./messaging/spectrum.js";
 import { ingest } from "./pipeline/ingest.js";
-import { dismiss, getObligation, getOpen, listObligations, markDone, snooze } from "./pipeline/ledger.js";
+import { dismiss, getObligation, getOpen, listObligations, markDone, protectedTotal, snooze } from "./pipeline/ledger.js";
 import { latestDecision, latestScores, rank } from "./pipeline/rank.js";
 import { completeMockCall } from "./voice/calls.js";
 import { startCall } from "./voice/elevenlabs.js";
@@ -128,6 +129,43 @@ app.post("/api/demo/inject", async (c) => {
   const fixture = findFixture(body.data.fixture_id);
   if (!fixture) return c.json({ error: `unknown fixture "${body.data.fixture_id}"` }, 404);
   return c.json(await ingest(renderFixture(fixture, now()), { fixture_id: fixture.id }));
+});
+
+// --- judge view state (local only) ---
+
+const WEEK_MS = 7 * 24 * HOUR_MS;
+
+/** Demo clock, headline totals and the held fixtures for "Inject next" (injected = since the last reset). */
+app.get("/api/demo/state", (c) => {
+  const at = now();
+  const atRiskWeek = getOpen()
+    .filter((o) => { const t = Date.parse(o.deadline_at); return t >= at.getTime() && t <= at.getTime() + WEEK_MS; })
+    .reduce((sum, o) => sum + o.amount_at_risk_usd, 0);
+  const lastReset = db.prepare("SELECT rowid FROM events WHERE type = 'demo.reset' ORDER BY rowid DESC LIMIT 1").get() as
+    { rowid: number } | undefined;
+  const injected = new Set((db.prepare(
+    `SELECT json_extract(payload, '$.fixture_id') AS id FROM events
+     WHERE type = 'message.received' AND rowid > ? AND json_extract(payload, '$.fixture_id') IS NOT NULL`,
+  ).all(lastReset?.rowid ?? 0) as { id: string }[]).map((r) => r.id));
+  return c.json({
+    now: at.toISOString(),
+    offset_minutes: getSettings().clock_offset_minutes,
+    at_risk_week: Math.round(atRiskWeek * 100) / 100,
+    protected_total: protectedTotal(),
+    voice_mode: config.VOICE_MODE,
+    messaging_mode: config.MESSAGING_MODE,
+    held: loadHeld().map((f) => ({ id: f.id, subject: f.subject, injected: injected.has(f.id) })),
+  });
+});
+
+const ReplyBody = z.object({ text: z.string().min(1) });
+
+// A text reply as if the user sent it (smoke test, and a stand-in when the phone isn't at hand).
+app.post("/api/demo/reply", async (c) => {
+  const body = ReplyBody.safeParse(await c.req.json().catch(() => null));
+  if (!body.success) return c.json({ error: "body must be {text}" }, 400);
+  await handleReply({ spectrum_message_id: `demo_${newId("rep")}`, text: body.data.text });
+  return c.json({ ok: true });
 });
 
 // --- voice demo controls (local only: the tunnel guard keeps /api/* off the tunnel) ---

@@ -3,86 +3,490 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
   <title>BidBy</title>
   <style>
-    body { font: 15px/1.4 system-ui, sans-serif; margin: 24px; background: #fafafa; color: #111; }
-    h1 { margin: 0 0 4px; }
-    #status { color: #666; margin-bottom: 16px; }
-    #feed { list-style: none; padding: 0; margin: 0; font-family: ui-monospace, monospace; font-size: 13px; }
-    #feed li { padding: 6px 8px; border-bottom: 1px solid #e5e5e5; }
-    .at { color: #888; margin-right: 8px; }
-    .type { font-weight: 600; margin-right: 8px; }
-    .payload { color: #444; word-break: break-all; }
-    #call { display: none; margin-bottom: 16px; padding: 12px 14px; border-radius: 10px; background: #111; color: #fff; }
-    #call.on { display: block; }
-    #call .state { font-weight: 600; }
-    #call ul { margin: 6px 0 0; padding-left: 18px; font-size: 13px; color: #ddd; }
+    /* Judge view (spec 07): ledger, bids, live feed. Every number comes from the API. */
+    :root {
+      --bg: #eef1f5; --panel: #ffffff; --ink: #0f172a; --ink2: #475569; --ink3: #94a3b8; --line: #e2e8f0;
+      --top: #0b1324; --top-ink: #e2e8f0; --accent: #2563eb; --good: #059669; --warn: #d97706; --bad: #dc2626;
+      --aid: #4f46e5; --credit: #e11d48; --subs: #d97706; --money_in: #059669; --ledger: #64748b;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body { background: var(--bg); color: var(--ink); font: 15px/1.35 Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+      display: flex; flex-direction: column; overflow: hidden; }
+    button { font: inherit; cursor: pointer; }
+    .num { font-variant-numeric: tabular-nums; }
+
+    /* --- top bar --- */
+    header { background: var(--top); color: var(--top-ink); display: flex; align-items: center; gap: 22px; padding: 10px 20px; flex: none; }
+    .brand { display: flex; flex-direction: column; min-width: 150px; }
+    .brand b { font-size: 24px; letter-spacing: -.3px; color: #fff; }
+    .brand span { font-size: 12px; color: #94a3b8; }
+    .clock { display: flex; flex-direction: column; min-width: 250px; }
+    .clock .time { font-size: 30px; font-weight: 700; color: #fff; letter-spacing: -.5px; }
+    .clock .date { font-size: 13px; color: #94a3b8; }
+    .clock .date em { font-style: normal; color: #fbbf24; }
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; flex: 1; }
+    .controls button { background: #1e293b; color: #f1f5f9; border: 1px solid #334155; border-radius: 8px; padding: 9px 13px; font-weight: 600; }
+    .controls button:hover:not(:disabled) { background: #273449; }
+    .controls button.primary { background: var(--accent); border-color: var(--accent); }
+    .controls button.call { background: #b91c1c; border-color: #b91c1c; }
+    .controls button:disabled { opacity: .45; cursor: default; }
+    .inject { display: flex; }
+    .inject button { border-radius: 8px 0 0 8px; }
+    .inject select { background: #1d4ed8; color: #fff; border: 1px solid var(--accent); border-left: 1px solid #93c5fd; border-radius: 0 8px 8px 0;
+      font: inherit; font-size: 13px; padding: 0 6px; width: 26px; cursor: pointer; }
+    .modes { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; font-size: 12px; color: #94a3b8; }
+    .pill { border: 1px solid #334155; border-radius: 99px; padding: 2px 8px; }
+    .pill.live::before { content: "●"; color: #22c55e; margin-right: 5px; }
+    .pill.off::before { content: "●"; color: #ef4444; margin-right: 5px; }
+    #busy { font-size: 13px; color: #fbbf24; min-height: 1em; }
+
+    /* --- columns --- */
+    main { flex: 1; display: grid; grid-template-columns: 1fr 1.12fr 0.95fr; gap: 14px; padding: 14px; min-height: 0; }
+    section { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; display: flex; flex-direction: column; min-height: 0; }
+    section > h2 { margin: 0; padding: 12px 16px 10px; font-size: 13px; text-transform: uppercase; letter-spacing: .8px; color: var(--ink2);
+      border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: baseline; }
+    section > h2 small { text-transform: none; letter-spacing: 0; color: var(--ink3); font-weight: 500; }
+    .scroll { overflow-y: auto; padding: 12px 14px; flex: 1; }
+
+    .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px 14px 0; }
+    .metric { border-radius: 10px; padding: 10px 12px; background: #f8fafc; border: 1px solid var(--line); }
+    .metric .v { font-size: 28px; font-weight: 800; letter-spacing: -.5px; }
+    .metric .k { font-size: 12px; color: var(--ink2); text-transform: uppercase; letter-spacing: .6px; }
+    .metric.risk .v { color: var(--bad); }
+    .metric.safe .v { color: var(--good); }
+
+    .ob { border: 1px solid var(--line); border-left: 5px solid var(--ledger); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+    .ob .row1 { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+    .ob .title { font-weight: 700; font-size: 16px; }
+    .ob .amt { font-size: 20px; font-weight: 800; }
+    .ob .row2 { display: flex; gap: 8px; align-items: center; margin-top: 6px; font-size: 13px; color: var(--ink2); flex-wrap: wrap; }
+    .ob.top { box-shadow: 0 0 0 2px var(--accent); }
+    .chip { display: inline-block; border-radius: 99px; padding: 1px 8px; font-size: 12px; font-weight: 600; background: #f1f5f9; color: var(--ink2); }
+    .chip.dom { color: #fff; }
+    .left { font-weight: 700; }
+    .left.urgent { color: var(--bad); }
+    .left.soon { color: var(--warn); }
+    .st-notified { background: #dbeafe; color: #1d4ed8; }
+    .st-escalated { background: #fee2e2; color: #b91c1c; }
+    .st-snoozed { background: #fef3c7; color: #92400e; }
+    .st-done { background: #d1fae5; color: #065f46; }
+    .closed { opacity: .55; }
+    .closed .ob { padding: 6px 12px; }
+    .closed .ob .amt { font-size: 15px; }
+    .closed h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--ink3); margin: 14px 0 8px; }
+
+    .rationale { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; font-size: 15px; }
+    .rationale small { display: block; color: var(--ink2); font-size: 12px; margin-bottom: 3px; text-transform: uppercase; letter-spacing: .6px; }
+    .bid { border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; margin-bottom: 9px; }
+    .bid.first { border: 2px solid var(--accent); background: #f8faff; }
+    .bid .row1 { display: flex; gap: 10px; align-items: baseline; }
+    .bid .rank { font-weight: 800; color: var(--ink3); width: 26px; font-size: 17px; }
+    .bid.first .rank { color: var(--accent); }
+    .bid .title { font-weight: 700; flex: 1; }
+    .bid .score { font-weight: 800; }
+    .bar { height: 8px; background: #e2e8f0; border-radius: 99px; margin: 7px 0 6px 36px; overflow: hidden; }
+    .bar i { display: block; height: 100%; background: var(--ink3); border-radius: 99px; }
+    .bid.first .bar i { background: var(--accent); }
+    .bid .meta { margin-left: 36px; display: flex; flex-wrap: wrap; gap: 6px; font-size: 12.5px; color: var(--ink2); align-items: center; }
+    .bid .arg { margin: 5px 0 0 36px; font-size: 13.5px; color: var(--ink2); font-style: italic; }
+    .flag { background: #fee2e2; color: #991b1b; }
+    .flag.soft { background: #f1f5f9; color: var(--ink2); }
+
+    #callcard { display: none; margin: 12px 14px 0; border-radius: 10px; padding: 10px 12px; background: var(--top); color: #fff; }
+    #callcard.on { display: block; }
+    #callcard .state { font-weight: 700; font-size: 15px; }
+    #callcard ul { margin: 6px 0 0; padding-left: 18px; font-size: 13px; color: #cbd5e1; }
+    #callcard .mock { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+    #callcard .mock button { background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 6px; padding: 4px 9px; font-size: 12px; }
+    #feed { list-style: none; margin: 0; padding: 0; }
+    #feed li { display: grid; grid-template-columns: 54px 1fr; gap: 8px; padding: 6px 2px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+    #feed li .t { color: var(--ink3); font-size: 12.5px; padding-top: 1px; }
+    #feed li.k-call { background: #fef2f2; }
+    #feed li.k-text { background: #f0f9ff; }
+    #feed li.k-rank { background: #eef2ff; }
+    #feed li.k-good { background: #ecfdf5; }
+    #feed li.k-warn { background: #fffbeb; }
+    #feed li.k-dim { color: var(--ink3); }
+    .empty { color: var(--ink3); text-align: center; padding: 30px 10px; }
   </style>
 </head>
 <body>
-  <!-- Bare event feed (spec 00). The full judge view is spec 07. -->
-  <h1>BidBy</h1>
-  <div id="status">connecting…</div>
-  <!-- Call card (spec 06): BidBy calling the user, and each voice tool call live. -->
-  <div id="call"><div class="state"></div><ul></ul></div>
-  <ul id="feed"></ul>
+  <header>
+    <div class="brand"><b>BidBy</b><span>money at risk, ranked</span></div>
+    <div class="clock"><span class="time num" id="clockTime">--:--</span><span class="date" id="clockDate">demo clock</span></div>
+    <div class="controls">
+      <span class="inject"><button class="primary" id="btnInject">Inject next</button><select id="selHeld" title="Choose what to inject"></select></span>
+      <button id="btnAdvance">Advance 1 h</button>
+      <button id="btnJump">Jump to 9 PM</button>
+      <button class="call" id="btnCall">Call now</button>
+      <button id="btnReset">Reset</button>
+    </div>
+    <div class="modes">
+      <span class="pill off" id="conn">connecting</span>
+      <span id="modes"></span>
+      <span id="busy"></span>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <h2>Ledger <small id="ledgerCount"></small></h2>
+      <div class="metrics">
+        <div class="metric risk"><div class="v num" id="atRisk">–</div><div class="k">at risk this week</div></div>
+        <div class="metric safe"><div class="v num" id="protected">–</div><div class="k">protected this month</div></div>
+      </div>
+      <div class="scroll" id="ledger"></div>
+    </section>
+
+    <section>
+      <h2>Agent bids <small id="roundAt"></small></h2>
+      <div class="scroll" id="bids"></div>
+    </section>
+
+    <section>
+      <h2>Live feed <small>newest first</small></h2>
+      <div id="callcard"><div class="state"></div><ul></ul><div class="mock"></div></div>
+      <div class="scroll"><ul id="feed"></ul></div>
+    </section>
+  </main>
 
   <script>
-    const feed = document.getElementById("feed");
-    const status = document.getElementById("status");
-    const seen = new Set();
-    const callCard = document.getElementById("call");
+    const $ = (id) => document.getElementById(id);
+    const NY = "America/New_York";
+    const DOMAIN_LABEL = { aid: "Aid", credit: "Credit", subs: "Subscription", money_in: "Money in" };
+    const HELD_LABEL = { verification: "FAFSA verification", phishing: "Phishing email", verification_confirmed: "Documents accepted", card_paid: "Card paid" };
+    const STORY = ["verification", "verification_confirmed", "phishing", "card_paid"]; // "Inject next" order (SYSTEM_DESIGN §13)
+    let picked = null; // a fixture chosen in the picker, until it is injected
 
-    const CALL_STATES = {
-      "call.ringing": (p) => `📞 BidBy is calling about ${p.title} (${p.amount}, due ${p.deadline})…`,
-      "call.started": (p) => p.provider === "browser" ? null : `📞 Call started (${p.provider})`,
-      "call.answered": () => "📞 In call",
-      "call.completed": (p) => `✅ Call ended: ${p.summary || "no summary"}`,
-      "call.failed": (p) => `❌ Call not connected (${p.failure_reason ?? p.message ?? "failed"})`,
-      "call.refused": () => "⛔ Call refused: number not on ALLOWED_DIAL_NUMBERS",
-      "call.manual_needed": (p) => `☎️ Start the call from the ElevenLabs dashboard: ${JSON.stringify(p.dynamic_variables)}`,
-    };
+    let state = null;        // GET /api/demo/state
+    let stateAt = 0;         // performance.now() when state arrived: the demo clock runs at real speed between fetches
+    let obligations = [];
+    let decision = null;
+    let call = null;         // the active call, from events
 
-    function renderCall(e) {
-      if (e.type === "call.ringing" || e.type === "call.manual_needed" || (e.type === "call.started" && e.payload.provider !== "browser")) {
-        callCard.querySelector("ul").replaceChildren();
-      }
-      const state = CALL_STATES[e.type]?.(e.payload);
-      if (state) {
-        callCard.querySelector(".state").textContent = state;
-        callCard.classList.add("on");
-      }
-      if (e.type === "voice.tool_called") {
-        const li = document.createElement("li");
-        const { tool, ...args } = e.payload;
-        li.textContent = `${tool} ${JSON.stringify(args)}`;
-        callCard.querySelector("ul").append(li);
-        callCard.classList.add("on");
+    // --- formatting ---
+
+    const money = (v) => "$" + Number(v).toLocaleString("en-US", { minimumFractionDigits: Number.isInteger(v) ? 0 : 2, maximumFractionDigits: 2 });
+    const demoNow = () => state ? new Date(Date.parse(state.now) + (performance.now() - stateAt)) : null;
+    const fmt = (d, opts) => new Intl.DateTimeFormat("en-US", { timeZone: NY, ...opts }).format(d);
+    const timeNY = (d) => fmt(d, { hour: "numeric", minute: "2-digit" });
+
+    function left(deadlineIso) {
+      const now = demoNow();
+      if (!now) return { text: "", cls: "" };
+      const ms = Date.parse(deadlineIso) - now.getTime();
+      const abs = Math.abs(ms), h = Math.floor(abs / 3.6e6), m = Math.floor((abs % 3.6e6) / 6e4), d = Math.floor(h / 24);
+      const span = d >= 2 ? `${d}d ${h % 24}h` : h >= 1 ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;
+      if (ms < 0) return { text: `overdue ${span}`, cls: "urgent" };
+      return { text: `${span} left`, cls: ms < 12 * 3.6e6 ? "urgent" : ms < 48 * 3.6e6 ? "soon" : "" };
+    }
+
+    function el(tag, cls, text) {
+      const e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (text !== undefined) e.textContent = text;
+      return e;
+    }
+
+    // --- data ---
+
+    async function getJSON(url) {
+      const r = await fetch(url, { cache: "no-store" });
+      if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
+      return r.json();
+    }
+
+    async function refresh() {
+      try {
+        const [s, o, d] = await Promise.all([getJSON("/api/demo/state"), getJSON("/api/obligations"), getJSON("/api/decisions/latest")]);
+        state = s; stateAt = performance.now(); obligations = o; decision = d;
+        render();
+      } catch (err) {
+        console.error(err);
       }
     }
 
-    function render(e) {
-      const li = document.createElement("li");
-      for (const [cls, text] of [["at", e.at], ["type", e.type], ["payload", JSON.stringify(e.payload)]]) {
-        const span = document.createElement("span");
-        span.className = cls;
-        span.textContent = text;
-        li.append(span);
+    let refreshTimer = null;
+    const refreshSoon = () => { clearTimeout(refreshTimer); refreshTimer = setTimeout(refresh, 250); };
+
+    // --- render ---
+
+    function render() {
+      renderTop();
+      renderLedger();
+      renderBids();
+      renderCall();
+    }
+
+    function renderTop() {
+      const now = demoNow();
+      if (now) {
+        $("clockTime").textContent = timeNY(now);
+        const date = fmt(now, { weekday: "long", month: "short", day: "numeric" });
+        const shifted = state.offset_minutes !== 0;
+        $("clockDate").replaceChildren(document.createTextNode(`${date} · New York`), ...(shifted ? [document.createTextNode(" · "), el("em", "", "demo time")] : []));
       }
-      feed.prepend(li);
+      if (!state) return;
+      $("atRisk").textContent = money(state.at_risk_week);
+      $("protected").textContent = money(state.protected_total);
+      $("modes").textContent = `voice: ${state.voice_mode} · texts: ${state.messaging_mode}`;
+      const held = [...state.held].sort((a, b) => (STORY.indexOf(a.id) + 99) % 99 - (STORY.indexOf(b.id) + 99) % 99);
+      if (picked && held.find((h) => h.id === picked)?.injected) picked = null;
+      const next = held.find((h) => h.id === picked) ?? held.find((h) => !h.injected);
+      $("btnInject").textContent = next ? `Inject: ${HELD_LABEL[next.id] ?? next.id}` : "All injected";
+      $("btnInject").disabled = !next || !!busy;
+      $("btnInject").dataset.fixture = next?.id ?? "";
+      const sel = $("selHeld");
+      if (document.activeElement !== sel) {
+        sel.replaceChildren(...held.map((h) => {
+          const o = el("option", "", `${h.injected ? "✓ " : ""}${HELD_LABEL[h.id] ?? h.id}`);
+          o.value = h.id;
+          o.selected = h.id === next?.id;
+          return o;
+        }));
+      }
+    }
+
+    function renderLedger() {
+      const scores = Object.fromEntries((decision?.ranked ?? []).map((r) => [r.obligation_id, r.score]));
+      const topId = decision?.ranked?.find((r) => obligations.some((o) => o.id === r.obligation_id && !["done", "dismissed"].includes(o.status)))?.obligation_id;
+      const open = obligations.filter((o) => !["done", "dismissed"].includes(o.status));
+      const closed = obligations.filter((o) => ["done", "dismissed"].includes(o.status));
+      $("ledgerCount").textContent = `${open.length} open`;
+
+      const card = (o) => {
+        const c = el("div", "ob" + (o.id === topId ? " top" : ""));
+        c.style.borderLeftColor = `var(--${o.domain})`;
+        const r1 = el("div", "row1");
+        r1.append(el("span", "title", o.title), el("span", "amt num", money(o.amount_at_risk_usd)));
+        const r2 = el("div", "row2");
+        const dom = el("span", "chip dom", DOMAIN_LABEL[o.domain] ?? o.domain);
+        dom.style.background = `var(--${o.domain})`;
+        r2.append(dom);
+        if (!["done", "dismissed"].includes(o.status)) {
+          const l = left(o.deadline_at);
+          r2.append(el("span", `left num ${l.cls}`, l.text));
+          r2.append(el("span", "", `due ${fmt(new Date(o.deadline_at), { weekday: "short", hour: "numeric", minute: "2-digit" })}`));
+        }
+        const statusText = o.status === "snoozed" && o.snoozed_until ? `snoozed until ${timeNY(new Date(o.snoozed_until))}`
+          : { notified: "texted", escalated: "called", open: "open" }[o.status] ?? o.status;
+        r2.append(el("span", `chip st-${o.status}`, statusText));
+        const s = scores[o.id] ?? o.score;
+        if (s != null && !["done", "dismissed"].includes(o.status)) r2.append(el("span", "num", `score ${Math.round(s).toLocaleString("en-US")}`));
+        c.append(r1, r2);
+        return c;
+      };
+
+      const box = $("ledger");
+      box.replaceChildren();
+      if (!obligations.length) box.append(el("div", "empty", "No obligations yet. Reset to load the inbox."));
+      for (const o of open) box.append(card(o));
+      if (closed.length) {
+        const wrap = el("div", "closed");
+        wrap.append(el("h3", "", `Closed (${closed.length})`));
+        for (const o of closed) wrap.append(card(o));
+        box.append(wrap);
+      }
+    }
+
+    function renderBids() {
+      const box = $("bids");
+      box.replaceChildren();
+      if (!decision?.decision_id) {
+        $("roundAt").textContent = "";
+        box.append(el("div", "empty", "No ranking round yet."));
+        return;
+      }
+      $("roundAt").textContent = `round at ${timeNY(new Date(decision.created_at))}`;
+      const rat = el("div", "rationale");
+      rat.append(el("small", "", "Why this order"), document.createTextNode(decision.rationale));
+      box.append(rat);
+
+      const max = Math.max(...decision.ranked.map((r) => r.score ?? 0), 1);
+      decision.ranked.forEach((r, i) => {
+        const bid = decision.bids.find((b) => b.obligation_id === r.obligation_id);
+        const c = el("div", "bid" + (i === 0 ? " first" : ""));
+        const r1 = el("div", "row1");
+        r1.append(el("span", "rank", `#${r.rank}`), el("span", "title", r.title ?? r.obligation_id),
+          el("span", "score num", Math.round(r.score ?? 0).toLocaleString("en-US")));
+        const bar = el("div", "bar");
+        const fill = el("i");
+        fill.style.width = `${Math.max(2, ((r.score ?? 0) / max) * 100)}%`;
+        bar.append(fill);
+        c.append(r1, bar);
+        if (bid) {
+          const meta = el("div", "meta");
+          const agent = el("span", "chip dom", bid.agent_id === "ledger" ? "ledger fallback" : `${bid.agent_id} agent`);
+          agent.style.background = `var(--${bid.agent_id})`;
+          meta.append(agent, el("span", "num", `bids ${money(bid.amount_at_risk_usd)}`), el("span", "num", `~${Math.round(bid.effort_minutes)} min`));
+          if (bid.blocks_other_aid) meta.append(el("span", "chip flag", "blocks other aid"));
+          meta.append(el("span", bid.reversible ? "chip flag soft" : "chip flag", bid.reversible ? "reversible" : "irreversible"));
+          c.append(meta, el("div", "arg", `“${bid.argument}”`));
+        }
+        box.append(c);
+      });
+    }
+
+    function renderCall() {
+      const card = $("callcard");
+      card.classList.toggle("on", !!call);
+      if (!call) return;
+      card.querySelector(".state").textContent = call.state;
+      const ul = card.querySelector("ul");
+      ul.replaceChildren(...call.tools.map((t) => el("li", "", t)));
+      const mock = card.querySelector(".mock");
+      mock.replaceChildren();
+      if (call.conversationId?.startsWith("conv_mock_") && call.open) {
+        for (const [label, body] of [["Finish: snooze 10pm", { outcome: "completed", say: "snooze 10pm" }],
+          ["Finish: done", { outcome: "completed", say: "done" }], ["No answer", { outcome: "no_answer" }]]) {
+          const b = el("button", "", label);
+          b.onclick = () => post(`/api/demo/calls/${call.conversationId}/complete`, body, label);
+          mock.append(b);
+        }
+      }
+    }
+
+    // --- live feed ---
+
+    const truncate = (s, n = 110) => (s && s.length > n ? s.slice(0, n - 1) + "…" : s ?? "");
+    const firstLine = (s) => truncate(String(s ?? "").split("\n")[0]);
+    const titleOf = (id) => obligations.find((o) => o.id === id)?.title ?? "item";
+
+    // [kind, text] per event type; null hides it.
+    const FEED = {
+      "demo.reset": () => ["dim", "Demo reset"],
+      "demo.seeded": (p) => ["dim", `Inbox loaded: ${p.messages} messages → ${p.open_obligations} obligations`],
+      "clock.changed": (p) => ["dim", `Clock → ${fmt(new Date(p.now), { weekday: "short", hour: "numeric", minute: "2-digit" })}`],
+      "message.received": (p) => ["", `📥 ${p.source} from ${p.sender}: ${truncate(p.subject, 80)}`],
+      "message.noise": (p) => ["dim", `Ignored (no money at stake): ${truncate(p.subject, 70)}`],
+      "message.flagged": (p) => ["warn", `⚠ Suspicious, not acted on: ${truncate(p.subject, 70)}`],
+      "message.unprocessed": (p) => ["warn", `Couldn't read: ${truncate(p.subject, 70)}`],
+      "obligation.created": (p) => ["good", `➕ Ledger: ${p.title} · ${money(p.amount_at_risk_usd)}`],
+      "obligation.updated": (p) => ["", `✎ Updated ${p.title} (${(p.changed ?? []).join(", ")})`],
+      "obligation.notified": (p) => ["text", `Texted about ${p.title}`],
+      "obligation.escalated": (p) => ["call", `Escalated to a call: ${p.title}`],
+      "obligation.snoozed": (p) => ["", `⏰ ${p.title} snoozed until ${timeNY(new Date(p.until))}`],
+      "obligation.woke": (p) => ["", `⏰ ${p.title} is back`],
+      "obligation.done": (p) => ["good", `✅ ${p.title} done (${p.via}) · ${money(p.amount_at_risk_usd)} protected`],
+      "obligation.dismissed": (p) => ["dim", `${p.title} dismissed`],
+      "bid.submitted": (p) => ["", `${p.agent_id === "ledger" ? "Ledger fallback" : p.agent_id + " agent"} bid ${money(p.amount_at_risk_usd)} on ${p.title}` +
+        `${p.blocks_other_aid ? " · blocks other aid" : ""}${p.reversible ? "" : " · irreversible"}`],
+      "decision.made": (p) => ["rank", `🏆 Ranked: ${p.top_title} first (score ${Math.round(p.top_score).toLocaleString("en-US")})`],
+      "headstart.ready": (p) => ["good", `🧰 Head start for ${titleOf(p.obligation_id)}: ${p.found_files.length} file(s) found, ${p.missing.length} missing`],
+      "text.sent": (p) => ["text", `📱 Text (${p.kind.replace("_", "-")}): ${firstLine(p.body)}`],
+      "text.received": (p) => ["text", `💬 You replied: “${truncate(p.text, 60)}”`],
+      "text.ignored": () => null,
+      "agent.called": () => null,
+      "agent.returned": () => null,
+      "agent.failed": (p) => ["warn", `${p.agent_id} agent failed (${p.tool})`],
+      "call.ringing": (p) => ["call", `📞 Calling you about ${p.title} (${p.amount}, due ${p.deadline})`],
+      "call.started": (p) => p.provider === "browser" ? null : ["call", `📞 Call started (${p.provider})`],
+      "call.answered": () => ["call", "📞 You picked up"],
+      "call.completed": (p) => ["call", `📞 Call ended: ${truncate(p.summary, 140)}`],
+      "call.failed": (p) => ["call", `📞 Not connected (${p.failure_reason ?? p.message ?? "failed"})`],
+      "call.recovered": () => ["call", "📞 Call summary recovered"],
+      "call.refused": () => ["warn", "Call refused: number not on the allowlist"],
+      "call.manual_needed": () => ["call", "📞 Start the call from the ElevenLabs dashboard"],
+      "voice.tool_called": (p) => ["call", `🎙 Call: ${p.tool}${p.remind_at_iso ? ` (“${p.remind_at_iso}”)` : ""}`],
+    };
+
+    function trackCall(e) {
+      const p = e.payload;
+      const open = (state) => { call = { state, tools: [], open: true, conversationId: p.conversation_id ?? null, id: p.call_id }; };
+      switch (e.type) {
+        case "call.ringing": open(`📞 Calling you about ${p.title}…`); break;
+        case "call.started": if (p.provider !== "browser") open(`📞 Calling you (${p.provider})…`); break;
+        case "call.answered": if (call) { call.state = "📞 In call"; call.conversationId = p.conversation_id; } break;
+        case "voice.tool_called": if (call) call.tools.push(`${p.tool}${p.remind_at_iso ? ` (“${p.remind_at_iso}”)` : ""}`); break;
+        case "call.completed": if (call) { call.state = `✅ Call ended: ${truncate(p.summary, 160)}`; call.open = false; } break;
+        case "call.failed": if (call) { call.state = `❌ Not connected (${p.failure_reason ?? p.message ?? "failed"})`; call.open = false; } break;
+        case "demo.reset": call = null; break;
+      }
+    }
+
+    const seen = new Set();
+    function onEvent(e) {
+      if (seen.has(e.id)) return; // replayed on reconnect
+      seen.add(e.id);
+      if (e.type === "demo.reset") $("feed").replaceChildren();
+      trackCall(e);
+      const line = FEED[e.type] ? FEED[e.type](e.payload) : ["dim", e.type];
+      if (line) {
+        const li = el("li", line[0] ? `k-${line[0]}` : "");
+        li.append(el("span", "t num", timeNY(new Date(e.at))), el("span", "", line[1]));
+        const feed = $("feed");
+        feed.prepend(li);
+        while (feed.children.length > 250) feed.lastChild.remove();
+      }
+      if (/^(obligation|decision|demo|clock|call|text|headstart|message)\./.test(e.type)) refreshSoon();
+      else if (e.type.startsWith("voice.")) renderCall();
     }
 
     const source = new EventSource("/api/events");
-    source.onopen = () => { status.textContent = "live"; };
-    source.onerror = () => { status.textContent = "disconnected — retrying…"; };
-    source.onmessage = (msg) => {
-      const e = JSON.parse(msg.data);
-      if (seen.has(e.id)) return; // replayed on reconnect
-      seen.add(e.id);
-      if (e.type === "demo.reset") { feed.replaceChildren(); callCard.classList.remove("on"); }
-      render(e);
-      renderCall(e);
+    source.onopen = () => { $("conn").textContent = "live"; $("conn").className = "pill live"; refresh(); };
+    source.onerror = () => { $("conn").textContent = "reconnecting"; $("conn").className = "pill off"; };
+    source.onmessage = (msg) => onEvent(JSON.parse(msg.data));
+
+    // --- demo controls ---
+
+    let busy = null;
+    function setBusy(text) {
+      busy = text;
+      $("busy").textContent = text ?? "";
+      for (const id of ["btnInject", "btnAdvance", "btnJump", "btnCall", "btnReset"]) $(id).disabled = !!text;
+      if (!text) renderTop();
+    }
+
+    async function post(url, body, label) {
+      setBusy(`${label}…`);
+      let error = null;
+      try {
+        const r = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body ?? {}) });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) error = `${label}: ${data.error ?? `HTTP ${r.status}`}`;
+        return data;
+      } catch (err) {
+        error = `${label}: ${err.message}`;
+      } finally {
+        setBusy(null);
+        if (error) {
+          $("busy").textContent = error;
+          setTimeout(() => { if (!busy) $("busy").textContent = ""; }, 6000);
+        }
+        refresh();
+      }
+    }
+
+    /** 9:00 PM New York on the demo day, with the right UTC offset. */
+    function ninePmIso() {
+      const now = demoNow();
+      const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: NY, year: "numeric", month: "2-digit", day: "2-digit", timeZoneName: "longOffset" })
+        .formatToParts(now).map((p) => [p.type, p.value]));
+      const offset = (parts.timeZoneName.match(/[+-]\d{2}:\d{2}/) ?? ["-04:00"])[0];
+      return `${parts.year}-${parts.month}-${parts.day}T21:00:00${offset}`;
+    }
+
+    $("btnInject").onclick = () => {
+      const id = $("btnInject").dataset.fixture;
+      if (id) post("/api/demo/inject", { fixture_id: id }, `Injecting ${HELD_LABEL[id] ?? id}`);
     };
+    $("selHeld").onchange = (e) => { picked = e.target.value; e.target.blur(); renderTop(); };
+    $("btnAdvance").onclick = () => post("/api/demo/clock", { advance_minutes: 60 }, "Advancing 1 h");
+    $("btnJump").onclick = () => post("/api/demo/clock", { set_iso: ninePmIso() }, "Jumping to 9 PM");
+    $("btnCall").onclick = () => post("/api/demo/escalate", {}, "Calling");
+    $("btnReset").onclick = () => {
+      if (confirm("Reset the demo? This clears the ledger and reloads the inbox (about a minute)."))
+        post("/api/demo/reset", {}, "Resetting (about a minute)");
+    };
+
+    // The clock and countdowns run between fetches; resync every 30 s.
+    setInterval(() => { renderTop(); if (obligations.length) renderLedger(); }, 1000);
+    setInterval(refresh, 30_000);
+    refresh();
   </script>
 </body>
 </html>
