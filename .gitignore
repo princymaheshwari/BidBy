@@ -44,6 +44,9 @@ npm-debug.log*
 # --- browser test artifacts ---
 .playwright-mcp/
 
+# --- graphify: commit the graph, not its local cache ---
+graphify-out/cache/
+
 # --- OS / editor ---
 .DS_Store
 Thumbs.db
