@@ -144,9 +144,9 @@
     "semantic_hash": ""
   },
   "scripts/setup-openclaw.sh": {
-    "mtime": 1792300471.402192,
-    "seen": 1792300976.0334647,
-    "ast_hash": "1368bd93b2af48529368a942d512b3da",
+    "mtime": 1792304372.8476048,
+    "seen": 1792304531.17069,
+    "ast_hash": "4243a4eb86b55676d6878626436c3ede",
     "semantic_hash": ""
   },
   "scripts/smoke.ts": {
@@ -174,8 +174,8 @@
     "semantic_hash": ""
   },
   "openclaw/agents/coordinator/AGENTS.md": {
-    "mtime": 1792300819.8731322,
-    "seen": 1792300976.0334694,
+    "mtime": 1792304489.3038003,
+    "seen": 1792304531.1706958,
     "ast_hash": "78721f185de391690fa4878c410c7669",
     "semantic_hash": ""
   },

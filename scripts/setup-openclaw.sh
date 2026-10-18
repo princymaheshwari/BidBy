@@ -1,26 +1,40 @@
 #!/usr/bin/env bash
-# Registers BidBy's six OpenClaw agents with their workspaces in this repo
-# (openclaw/agents/<id>/, so AGENTS.md edits reach the live agent), applies
-# openclaw/config.patch.json, and lists the Gateway's agent targets.
-# OpenClaw refuses symlinked bootstrap files, which is why the workspace is the repo folder itself.
+# Registers BidBy's six OpenClaw agents, copies their playbooks from this repo
+# into native WSL workspaces, applies openclaw/config.patch.json, and lists the
+# Gateway's agent targets.
+#
+# Why copies: OpenClaw refuses symlinked bootstrap files, and workspaces on
+# /mnt/c (the Windows drive) make every agent call ~10x slower. So workspaces
+# live under OpenClaw's own workspace root, and repo edits reach the agents
+# with a re-sync.
+#
 # Idempotent. Run it inside WSL, where OpenClaw and its Gateway live:
-#   bash scripts/setup-openclaw.sh                    # interactive shell
-#   bash scripts/setup-openclaw.sh --force-restart    # non-interactive: lets OpenClaw stop its own service
-# Applying the config briefly stops and restarts the Gateway.
+#   bash scripts/setup-openclaw.sh                    # full setup (briefly restarts the Gateway)
+#   bash scripts/setup-openclaw.sh --force-restart    # same, from a non-interactive shell
+#   bash scripts/setup-openclaw.sh --sync             # only copy playbooks + aid docs (no restart)
 # See specs/01-openclaw-setup.md.
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 AGENTS=(extractor aid credit subs money_in coordinator)
 PATCH="$REPO/openclaw/config.patch.json"
+SYNC_ONLY=0
 STOP_FLAGS=()
-[ "${1:-}" = "--force-restart" ] && STOP_FLAGS=(--force)
+for arg in "$@"; do
+  case "$arg" in
+    --sync) SYNC_ONLY=1 ;;
+    --force-restart) STOP_FLAGS=(--force) ;;
+    *) echo "unknown option: $arg" >&2; exit 2 ;;
+  esac
+done
 
 die() { echo "setup-openclaw: $*" >&2; exit 1; }
 command -v openclaw >/dev/null || die "openclaw is not on PATH. Run this in the WSL shell where OpenClaw is installed."
 command -v node >/dev/null || die "node is not on PATH."
 
-workspace_dir() { echo "$REPO/openclaw/agents/$1"; }
+ROOT="$(openclaw config get agents.defaults.workspace)"
+[ -n "$ROOT" ] || die "could not read agents.defaults.workspace from OpenClaw config"
+workspace_dir() { echo "$ROOT/bidby-$1"; }
 
 # Prints "<id>\t<workspace>" for every agent, from OpenClaw's own agent list.
 list_workspaces() {
@@ -37,6 +51,21 @@ load_workspaces() {
   while IFS=$'\t' read -r id ws; do WS["$id"]="$ws"; done < <(list_workspaces)
 }
 
+# Copies one agent's playbook (and aid's docs) from the repo into its workspace.
+sync_agent() {
+  local id="$1" ws
+  ws="$(workspace_dir "$id")"
+  mkdir -p "$ws"
+  rm -f "$ws/AGENTS.md" "$ws/BOOTSTRAP.md"   # AGENTS.md may be an old symlink; BOOTSTRAP.md is the first-run ritual
+  cp "$REPO/openclaw/agents/$id/AGENTS.md" "$ws/AGENTS.md"
+  if [ "$id" = aid ]; then
+    rm -rf "${ws:?}/docs"
+    cp -r "$REPO/openclaw/agents/aid/docs" "$ws/docs"
+    rm -f "$ws/docs/.gitkeep"
+  fi
+  echo "   $id: $ws"
+}
+
 # The shared Gateway token, read from the active config file. Never printed.
 read_token() {
   node -e '
@@ -46,28 +75,36 @@ read_token() {
     process.stdout.write(t);' "$(openclaw config file)"
 }
 
+if [ "$SYNC_ONLY" = 1 ]; then
+  echo "== sync playbooks"
+  for id in "${AGENTS[@]}"; do sync_agent "$id"; done
+  echo "   done; the next agent call reads the new playbooks"
+  exit 0
+fi
+
 # --- 1. agents ---------------------------------------------------------------
-echo "== 1/5 agents"
+echo "== 1/6 agents"
 load_workspaces
 RELOCATE=()
 for id in "${AGENTS[@]}"; do
   ws="$(workspace_dir "$id")"
-  [ -f "$ws/AGENTS.md" ] || die "missing playbook $ws/AGENTS.md"
-  # An empty .git keeps OpenClaw from running `git init` inside this repo folder.
-  mkdir -p "$ws/.git"
   if [ -z "${WS[$id]:-}" ]; then
     openclaw agents add "$id" --workspace "$ws" --non-interactive --json >/dev/null
     echo "   + $id"
   elif [ "${WS[$id]}" != "$ws" ]; then
     RELOCATE+=("$id")
-    echo "   ~ $id (workspace moves to the repo)"
+    echo "   ~ $id (workspace moves to $ws)"
   else
     echo "   = $id"
   fi
 done
 
-# --- 2. config (needs the Gateway stopped) -------------------------------------
-echo "== 2/5 config"
+# --- 2. playbooks --------------------------------------------------------------
+echo "== 2/6 playbooks"
+for id in "${AGENTS[@]}"; do sync_agent "$id"; done
+
+# --- 3. config (needs the Gateway stopped) -------------------------------------
+echo "== 3/6 config"
 port="$(openclaw config get gateway.port)"
 # Exit 0 if something accepts TCP connections on the Gateway port.
 gateway_up() {
@@ -89,18 +126,16 @@ trap - EXIT
 openclaw gateway start >/dev/null
 echo "   applied $PATCH"
 
-# --- 3. verify workspaces ------------------------------------------------------
-echo "== 3/5 workspaces"
+# --- 4. verify workspaces ------------------------------------------------------
+echo "== 4/6 workspaces"
 load_workspaces
 for id in "${AGENTS[@]}"; do
   [ "${WS[$id]:-}" = "$(workspace_dir "$id")" ] || die "$id workspace is ${WS[$id]:-unset}, expected $(workspace_dir "$id")"
-  # BOOTSTRAP.md is OpenClaw's first-run ritual; it would derail structured tool calls.
-  rm -f "$(workspace_dir "$id")/BOOTSTRAP.md"
-  echo "   $id: $(workspace_dir "$id")"
 done
+echo "   all six point at $ROOT/bidby-<id>"
 
-# --- 4. agent targets ----------------------------------------------------------
-echo "== 4/5 GET /v1/models"
+# --- 5. agent targets ----------------------------------------------------------
+echo "== 5/6 GET /v1/models"
 token="$(read_token)" || die "gateway.auth.token is not a plain string in OpenClaw config"
 BIDBY_GW_TOKEN="$token" BIDBY_GW_URL="http://127.0.0.1:$port/v1/models" BIDBY_AGENTS="${AGENTS[*]}" node -e '
   const url = process.env.BIDBY_GW_URL;
@@ -119,8 +154,8 @@ BIDBY_GW_TOKEN="$token" BIDBY_GW_URL="http://127.0.0.1:$port/v1/models" BIDBY_AG
     console.log("   all six BidBy agents are listed");
   })();'
 
-# --- 5. .env token -------------------------------------------------------------
-echo "== 5/5 .env"
+# --- 6. .env token -------------------------------------------------------------
+echo "== 6/6 .env"
 env_file="$REPO/.env"
 if [ ! -f "$env_file" ]; then
   echo "   no .env yet: copy .env.example to .env, then rerun to fill OPENCLAW_GATEWAY_TOKEN"

@@ -38,7 +38,7 @@ npm-debug.log*
 # --- OpenClaw local state, if ever created inside the repo ---
 .openclaw/
 
-# --- OpenClaw agent workspaces are openclaw/agents/<id>/: track only the playbooks and aid docs ---
+# --- openclaw/agents/<id>/: track only the playbooks and aid docs (workspaces are native copies) ---
 /openclaw/agents/*/*
 !/openclaw/agents/*/AGENTS.md
 !/openclaw/agents/aid/docs/
