@@ -10,7 +10,7 @@ import { db, newId } from "../db.js";
 import { emit } from "../events.js";
 import { handleReply } from "./replies.js";
 
-export type TextKind = "interrupt" | "digest" | "follow_up" | "closing";
+export type TextKind = "interrupt" | "digest" | "follow_up" | "reply" | "closing";
 
 const connect = (projectId: string, projectSecret: string) =>
   Spectrum({ projectId, projectSecret, providers: [imessage.config()] });

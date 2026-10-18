@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS head_starts (
 CREATE TABLE IF NOT EXISTS outbound_texts (
   id            TEXT PRIMARY KEY,
   obligation_id TEXT,
-  kind          TEXT NOT NULL CHECK (kind IN ('interrupt', 'digest', 'follow_up', 'closing')),
+  kind          TEXT NOT NULL CHECK (kind IN ('interrupt', 'digest', 'follow_up', 'reply', 'closing')),
   body          TEXT NOT NULL,
   sent_at       TEXT NOT NULL
 );
@@ -105,6 +105,34 @@ CREATE TABLE IF NOT EXISTS settings (
   user_phone           TEXT    NOT NULL
 );
 `);
+
+// --- migrations ---
+
+// Spec 04 added kind 'reply' (answers to 1, 2, status, snooze, free text). SQLite can't alter a CHECK,
+// so a database created before that rebuilds outbound_texts once, keeping its rows.
+const outboundSql = (db.prepare("SELECT sql FROM sqlite_master WHERE name = 'outbound_texts'").get() as { sql: string }).sql;
+if (!outboundSql.includes("'reply'")) {
+  db.exec("BEGIN");
+  try {
+    db.exec(`
+      CREATE TABLE outbound_texts_new (
+        id            TEXT PRIMARY KEY,
+        obligation_id TEXT,
+        kind          TEXT NOT NULL CHECK (kind IN ('interrupt', 'digest', 'follow_up', 'reply', 'closing')),
+        body          TEXT NOT NULL,
+        sent_at       TEXT NOT NULL
+      );
+      INSERT INTO outbound_texts_new (id, obligation_id, kind, body, sent_at)
+        SELECT id, obligation_id, kind, body, sent_at FROM outbound_texts ORDER BY rowid;
+      DROP TABLE outbound_texts;
+      ALTER TABLE outbound_texts_new RENAME TO outbound_texts;
+    `);
+    db.exec("COMMIT");
+  } catch (err) {
+    db.exec("ROLLBACK");
+    throw err;
+  }
+}
 
 // settings is a single row. Seed it once; .env stays the source of truth for the phone.
 db.prepare(

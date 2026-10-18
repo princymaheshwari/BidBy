@@ -61,16 +61,16 @@ async function act(reply: Reply, item: Obligation | undefined): Promise<void> {
   if (reply.action === "status") {
     const scores = latestScores();
     const open = getOpen().sort((a, b) => (scores[b.id] ?? 0) - (scores[a.id] ?? 0));
-    await sendToUser(statusText(open, at, protectedTotal()), "closing", null);
+    await sendToUser(statusText(open, at, protectedTotal()), "reply", null);
     return;
   }
 
   if (!item) {
-    await sendToUser("Nothing is waiting on you right now. Reply status to see what's open.", "closing", null);
+    await sendToUser("Nothing is waiting on you right now. Reply status to see what's open.", "reply", null);
     return;
   }
   if (isFinal(item) && reply.action !== "ask") {
-    await sendToUser(`${item.title} is already closed. Reply status to see what's open.`, "closing", null);
+    await sendToUser(`${item.title} is already closed. Reply status to see what's open.`, "reply", null);
     return;
   }
 
@@ -80,13 +80,13 @@ async function act(reply: Reply, item: Obligation | undefined): Promise<void> {
       const body = hs?.draft_text
         ? `Draft for ${item.title}:\n\n${hs.draft_text}`
         : `Next step for ${item.title}: ${item.required_action}`; // until spec 05 writes head starts
-      await sendToUser(body, "closing", item.id);
+      await sendToUser(body, "reply", item.id);
       return;
     }
     case "checklist": {
       const steps = latestHeadStart(item.id)?.checklist ?? [];
       const lines = steps.length ? steps : item.required_docs.length ? item.required_docs : [item.required_action];
-      await sendToUser(checklistText(item.title, lines), "closing", item.id);
+      await sendToUser(checklistText(item.title, lines), "reply", item.id);
       return;
     }
     case "done": {
@@ -105,12 +105,12 @@ async function act(reply: Reply, item: Obligation | undefined): Promise<void> {
       const reminderLeft = followUpsSent(item.id) < MAX_FOLLOW_UPS;
       await sendToUser(
         reminderLeft ? `Okay, I'll text you again at ${formatTimeNY(until)}.` : `Snoozed until ${formatTimeNY(until)}.`,
-        "closing", item.id,
+        "reply", item.id,
       );
       return;
     }
     case "ask":
-      await sendToUser(await answer(item, reply.text, at), "closing", item.id);
+      await sendToUser(await answer(item, reply.text, at), "reply", item.id);
       return;
   }
 }
