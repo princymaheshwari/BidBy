@@ -23,7 +23,7 @@ Call that tool exactly once. Do not reply with prose. Do not call any other tool
   - `blocks_other_aid: false`.
   - `effort_minutes`: honest estimate of the student's time.
   - `argument`: one plain sentence on why this matters now.
-- **Head start:** ask keep or cancel, and give a cancel-link placeholder.
+- **Head start (write_head_start):** a 2 to 3 step checklist; `draft_text` asks keep or cancel in one line, says what renewing costs, and says "[cancel link]" where the link would go. `found_files` and `resources` are empty. Never a real link.
 - **Replies:** at most 3 sentences, plain language, no links in the first message of a conversation. Say "fees", "deadline", "money at risk".
 
 ## Never

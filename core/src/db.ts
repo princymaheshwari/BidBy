@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { REPO_ROOT, config } from "./config.js";
 
-export const db = new DatabaseSync(resolve(REPO_ROOT, "bidby.db"));
+export const db = new DatabaseSync(resolve(REPO_ROOT, config.DB_PATH));
 db.exec("PRAGMA journal_mode = WAL;");
 
 db.exec(`

@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { digestText, followUpText, interruptText, money, parseReply, snoozeUntil, statusText } from "./grammar.js";
+import {
+  digestText, followUpText, headStartChecklistText, interruptText, money, parseReply, snoozeUntil, statusText,
+} from "./grammar.js";
 
 // Sunday Oct 18 2026, 2:00 PM New York (EDT).
 const at = new Date("2026-10-18T14:00:00-04:00");
@@ -81,4 +83,31 @@ test("snooze times resolve to the next matching New York time", () => {
   assert.equal(until("tomorrow"), ny("2026-10-19T09:00:00-04:00"));
   assert.equal(until("tomorrow 7pm"), ny("2026-10-19T19:00:00-04:00"));
   assert.equal(until("13pm"), ny("2026-10-18T16:00:00-04:00"));        // invalid: +2 h
+});
+
+test("head start checklist: ✓ found, ✗ missing, steps, at most 2 resources, no links", () => {
+  const text = headStartChecklistText(
+    "FAFSA verification",
+    [
+      { doc: "2025 IRS Tax Return Transcript", file: "docs/2025_tax_return_transcript_PLACEHOLDER.md" },
+      { doc: "2026-27 Verification Worksheet (signed)", file: null },
+    ],
+    ["Upload the transcript", "Fill in and sign the worksheet"],
+    [
+      { name: "Financial aid appeal", how_to_use: "Ask for Form SC-1." },
+      { name: "Emergency grant", how_to_use: "Apply via the Dean of Students form." },
+      { name: "Payment plan", how_to_use: "Enroll in the Bursar portal." },
+    ],
+  );
+  assert.equal(text, [
+    "FAFSA verification checklist:",
+    "✓ 2025 IRS Tax Return Transcript (found: 2025_tax_return_transcript_PLACEHOLDER.md)",
+    "✗ 2026-27 Verification Worksheet (signed) (missing)",
+    "1. Upload the transcript",
+    "2. Fill in and sign the worksheet",
+    "Help available:",
+    "- Financial aid appeal: Ask for Form SC-1.",
+    "- Emergency grant: Apply via the Dean of Students form.",
+  ].join("\n"));
+  assert.doesNotMatch(text, /https?:\/\//);
 });

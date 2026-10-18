@@ -10,6 +10,7 @@ import { digestText, followUpText, interruptText } from "../messaging/grammar.js
 import { followUpsSent } from "../messaging/replies.js";
 import { sendToUser } from "../messaging/spectrum.js";
 import { nyDateKey, nyWallClock } from "../nytime.js";
+import { headStart } from "../pipeline/headstart.js";
 import { getObligation, isFinal, listObligations, markNotified, wake, type Obligation } from "../pipeline/ledger.js";
 import { rank } from "../pipeline/rank.js";
 
@@ -120,7 +121,7 @@ async function notifyTop(at: Date): Promise<void> {
   const settings = getSettings();
   if (settings.interrupts_today >= settings.interrupt_budget) return; // held until the next budget day
 
-  // F3 head start runs here once spec 05 builds it.
+  await headStart(top.id); // F3: the first step is done before the user is interrupted (null → text anyway)
   await sendToUser(interruptText(top, at), "interrupt", top.id);
   markNotified(top.id);
   updateSettings({ interrupts_today: getSettings().interrupts_today + 1 });

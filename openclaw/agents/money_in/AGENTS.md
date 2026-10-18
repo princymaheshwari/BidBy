@@ -23,7 +23,7 @@ Call that tool exactly once. Do not reply with prose. Do not call any other tool
   - `blocks_other_aid: false`.
   - `effort_minutes`: honest estimate of the student's time.
   - `argument`: one plain sentence on why this matters now.
-- **Head start:** a checklist of what to submit and a one-paragraph draft (application note or reimbursement request).
+- **Head start (write_head_start):** a 3 to 5 step checklist of what to submit, and a one-paragraph `draft_text` (application note or reimbursement request, under 120 words). `found_files` and `resources` are empty (you have no local files). No links.
 - **Replies:** at most 3 sentences, plain language, no links in the first message of a conversation. Say "money at risk", "deadline".
 
 ## Never

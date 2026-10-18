@@ -7,9 +7,13 @@ import { DEFAULT_SNOOZE_MINUTES, MAX_FOLLOW_UPS } from "../config.js";
 import { db, newId } from "../db.js";
 import { emit } from "../events.js";
 import { formatTimeNY } from "../nytime.js";
+import { docStatus } from "../pipeline/docs.js";
+import { headStart } from "../pipeline/headstart.js";
 import { dismiss, getObligation, getOpen, isFinal, markDone, protectedTotal, snooze, type Obligation } from "../pipeline/ledger.js";
 import { latestScores } from "../pipeline/rank.js";
-import { checklistText, money, parseReply, snoozeUntil, statusText, type Reply } from "./grammar.js";
+import {
+  checklistText, headStartChecklistText, money, parseReply, snoozeUntil, statusText, type Reply,
+} from "./grammar.js";
 import { sendToUser } from "./spectrum.js";
 
 // Texts sent before core started (by more than this) are logged, not acted on: no surprise replies on boot.
@@ -75,18 +79,21 @@ async function act(reply: Reply, item: Obligation | undefined): Promise<void> {
   }
 
   switch (reply.action) {
+    // The head start is normally written before the interrupt; headStart() reuses it (or writes one now).
     case "draft": {
-      const hs = latestHeadStart(item.id);
+      const hs = await headStart(item.id);
       const body = hs?.draft_text
         ? `Draft for ${item.title}:\n\n${hs.draft_text}`
-        : `Next step for ${item.title}: ${item.required_action}`; // until spec 05 writes head starts
+        : `Next step for ${item.title}: ${item.required_action}`;
       await sendToUser(body, "reply", item.id);
       return;
     }
     case "checklist": {
-      const steps = latestHeadStart(item.id)?.checklist ?? [];
-      const lines = steps.length ? steps : item.required_docs.length ? item.required_docs : [item.required_action];
-      await sendToUser(checklistText(item.title, lines), "reply", item.id);
+      const hs = await headStart(item.id);
+      const body = hs
+        ? headStartChecklistText(item.title, docStatus(item.required_docs, hs.found_files), hs.checklist, hs.resources)
+        : checklistText(item.title, item.required_docs.length ? item.required_docs : [item.required_action]);
+      await sendToUser(body, "reply", item.id);
       return;
     }
     case "done": {
@@ -132,12 +139,6 @@ async function answer(item: Obligation, text: string, at: Date): Promise<string>
   const result = await callAgent(item.domain as AgentId, prompt, answerUser);
   if (!result) return "I couldn't answer that just now. Reply 1 for the draft, 2 for the checklist, or done.";
   return result.answer.trim().split(/(?<=[.!?])\s+/).slice(0, MAX_ANSWER_SENTENCES).join(" ");
-}
-
-function latestHeadStart(obligationId: string): { draft_text: string; checklist: string[] } | undefined {
-  const row = db.prepare("SELECT draft_text, checklist FROM head_starts WHERE obligation_id = ? ORDER BY rowid DESC LIMIT 1")
-    .get(obligationId) as { draft_text: string; checklist: string } | undefined;
-  return row && { draft_text: row.draft_text, checklist: JSON.parse(row.checklist) };
 }
 
 export function followUpsSent(obligationId: string): number {

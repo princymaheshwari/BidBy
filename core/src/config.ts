@@ -31,6 +31,7 @@ const Env = z.object({
   VOICE_MODE: z.enum(["live", "mock", "dashboard"]).default("live"),
 
   PORT: z.coerce.number().int().positive().default(8787),
+  DB_PATH: z.string().default("bidby.db"), // relative to the repo root; tests point this at a scratch file
 });
 
 const parsed = Env.safeParse(process.env);

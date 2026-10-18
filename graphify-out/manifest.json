@@ -24,21 +24,21 @@
     "semantic_hash": ""
   },
   "core/src/config.ts": {
-    "mtime": 1792308176.9656951,
-    "seen": 1792308716.4266841,
-    "ast_hash": "32a632a141506bb47460b7fce647c73d",
+    "mtime": 1792310329.3837352,
+    "seen": 1792310410.6476052,
+    "ast_hash": "c7a79f9e9c180ae0a0a239c0ef8b4434",
     "semantic_hash": ""
   },
   "core/src/db.ts": {
-    "mtime": 1792309819.2652621,
-    "seen": 1792309842.2210836,
-    "ast_hash": "9aa64ee386722b3543ed41123a65392a",
+    "mtime": 1792310329.4653618,
+    "seen": 1792310410.6476064,
+    "ast_hash": "4b17f84eed3b240bbdb8adfebde51861",
     "semantic_hash": ""
   },
   "core/src/escalation/timer.ts": {
-    "mtime": 1792308372.2566874,
-    "seen": 1792308716.4266918,
-    "ast_hash": "871d2d170c29d0537dcbaaee80dedd3c",
+    "mtime": 1792310223.3171308,
+    "seen": 1792310410.6476073,
+    "ast_hash": "76d879f2cabe8964bc1fcf32dd372101",
     "semantic_hash": ""
   },
   "core/src/events.ts": {
@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "core/src/messaging/replies.ts": {
-    "mtime": 1792309818.347859,
-    "seen": 1792309842.2210906,
-    "ast_hash": "86cd701d896d84e6274ef641153c1ae9",
+    "mtime": 1792310223.197708,
+    "seen": 1792310410.6476123,
+    "ast_hash": "3b24c8e6f91454c7113ab1bd53a5e0a8",
     "semantic_hash": ""
   },
   "core/src/messaging/spectrum.ts": {
@@ -66,9 +66,9 @@
     "semantic_hash": ""
   },
   "core/src/pipeline/headstart.ts": {
-    "mtime": 1792288340.742848,
-    "seen": 1792293611.0854194,
-    "ast_hash": "223ed95833bc179e42fe604f60914162",
+    "mtime": 1792310201.269179,
+    "seen": 1792310410.647618,
+    "ast_hash": "b0148ef5c1b8e5d324cc01753b919c32",
     "semantic_hash": ""
   },
   "core/src/pipeline/ingest.ts": {
@@ -168,9 +168,9 @@
     "semantic_hash": ""
   },
   "openclaw/agents/aid/AGENTS.md": {
-    "mtime": 1792296709.9033632,
-    "seen": 1792298037.27022,
-    "ast_hash": "d488321637f016ea8269bbe958128ca7",
+    "mtime": 1792310243.128612,
+    "seen": 1792310410.6476343,
+    "ast_hash": "c47ddeee9476ad0c4bc5ebbe67708096",
     "semantic_hash": ""
   },
   "openclaw/agents/coordinator/AGENTS.md": {
@@ -180,9 +180,9 @@
     "semantic_hash": ""
   },
   "openclaw/agents/credit/AGENTS.md": {
-    "mtime": 1792296710.360341,
-    "seen": 1792298037.2702215,
-    "ast_hash": "aa81f09edeb0928c34ad4c478b17ec48",
+    "mtime": 1792310243.162901,
+    "seen": 1792310410.6476412,
+    "ast_hash": "748592cd988ddbf0538ae4116ee2ea15",
     "semantic_hash": ""
   },
   "openclaw/agents/extractor/AGENTS.md": {
@@ -192,33 +192,75 @@
     "semantic_hash": ""
   },
   "openclaw/agents/money_in/AGENTS.md": {
-    "mtime": 1792296710.8827677,
-    "seen": 1792298037.2702231,
-    "ast_hash": "dbbcd06d5a1c62405fd0581da85a0f77",
+    "mtime": 1792310243.229858,
+    "seen": 1792310410.6476429,
+    "ast_hash": "8083d44b932eff8961aa6e883fd94000",
     "semantic_hash": ""
   },
   "openclaw/agents/subs/AGENTS.md": {
-    "mtime": 1792296710.7251022,
-    "seen": 1792298037.2702239,
-    "ast_hash": "b7894bcd8bf555af9dbb3bb8a9098825",
+    "mtime": 1792310243.1959183,
+    "seen": 1792310410.6476438,
+    "ast_hash": "af0c3a39dad94b2ebde2bed5594133d5",
     "semantic_hash": ""
   },
   "core/src/messaging/grammar.test.ts": {
-    "mtime": 1792308311.1800816,
-    "seen": 1792308716.4267023,
-    "ast_hash": "41e2c7a5cb833b168ce18a52238a5bc8",
+    "mtime": 1792310260.6000028,
+    "seen": 1792310410.6476104,
+    "ast_hash": "0dbce50bbed6d0ab34b1a6233f3464ff",
     "semantic_hash": ""
   },
   "core/src/messaging/grammar.ts": {
-    "mtime": 1792308200.930879,
-    "seen": 1792308716.4267054,
-    "ast_hash": "1f136fa88eba6c96653780bf64643363",
+    "mtime": 1792310222.8477533,
+    "seen": 1792310410.6476114,
+    "ast_hash": "61e7b9da27661d9cf1c0d373076f943b",
     "semantic_hash": ""
   },
   "core/src/nytime.ts": {
     "mtime": 1792308166.7880068,
     "seen": 1792308716.4267144,
     "ast_hash": "b01b0f5ee04f5e3d7ae6bdf1f0584442",
+    "semantic_hash": ""
+  },
+  "core/src/pipeline/docs.test.ts": {
+    "mtime": 1792310178.496116,
+    "seen": 1792310410.6476154,
+    "ast_hash": "38d7fff70c68270cd93a2504a13c2935",
+    "semantic_hash": ""
+  },
+  "core/src/pipeline/docs.ts": {
+    "mtime": 1792310178.451886,
+    "seen": 1792310410.647617,
+    "ast_hash": "4d1c5cc6480367ecfe05721ab6177554",
+    "semantic_hash": ""
+  },
+  "openclaw/agents/aid/docs/2025_tax_return_transcript_PLACEHOLDER.md": {
+    "mtime": 1792310159.470141,
+    "seen": 1792310410.6476352,
+    "ast_hash": "b3c0456d0e862abae4e9ca3736d1a9a5",
+    "semantic_hash": ""
+  },
+  "openclaw/agents/aid/docs/resume.md": {
+    "mtime": 1792310159.4509835,
+    "seen": 1792310410.647636,
+    "ast_hash": "a4095c72fdf95588435ba2adbea79418",
+    "semantic_hash": ""
+  },
+  "openclaw/agents/aid/docs/school_resources.md": {
+    "mtime": 1792310159.526253,
+    "seen": 1792310410.647637,
+    "ast_hash": "df3ffe6e08229cb3b075cdaae91a417c",
+    "semantic_hash": ""
+  },
+  "openclaw/agents/aid/docs/student_id_scan_PLACEHOLDER.md": {
+    "mtime": 1792310159.507139,
+    "seen": 1792310410.647638,
+    "ast_hash": "332604241378b23d06020c58c8f842fb",
+    "semantic_hash": ""
+  },
+  "openclaw/agents/aid/docs/verification_worksheet_v1_blank.md": {
+    "mtime": 1792310159.4893036,
+    "seen": 1792310410.6476393,
+    "ast_hash": "0b758f868c7ffd81f93ce82d96a70dfa",
     "semantic_hash": ""
   }
 }

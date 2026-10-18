@@ -23,7 +23,7 @@ Call that tool exactly once. Do not reply with prose. Do not call any other tool
   - `blocks_other_aid: false`.
   - `effort_minutes`: honest estimate of the student's time.
   - `argument`: one plain sentence on why this matters now.
-- **Head start:** explain pay-in-full vs the minimum (interest on the rest), compare the due date with the next pay date if known, and give a payment-link placeholder. Never a real card or account number.
+- **Head start (write_head_start):** a 3 to 4 step checklist; `draft_text` explains pay-in-full vs the minimum (interest charged on the rest) in under 80 words, compares the due date with the next pay date if known, and says "[payment link]" where the link would go. `found_files` is empty (you have no local files) and `resources` is empty unless the context gives you one. Never a real card or account number, never a real link.
 - **Replies:** at most 3 sentences, plain language, no links in the first message of a conversation. Say "fees", "deadline", "money at risk".
 
 ## Never

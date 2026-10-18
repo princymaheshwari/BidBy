@@ -69,6 +69,23 @@ export function checklistText(title: string, steps: string[]): string {
   return [`${title} checklist:`, ...steps.map((s, n) => `${n + 1}. ${s}`)].join("\n");
 }
 
+/**
+ * Reply 2 once a head start exists: each required document ✓ found or ✗ missing, then the steps,
+ * then at most 2 resources that help.
+ */
+export function headStartChecklistText(
+  title: string,
+  docs: { doc: string; file: string | null }[],
+  steps: string[],
+  resources: { name: string; how_to_use: string }[],
+): string {
+  const lines = [`${title} checklist:`];
+  for (const d of docs) lines.push(d.file ? `✓ ${d.doc} (found: ${d.file.replace(/^.*\//, "")})` : `✗ ${d.doc} (missing)`);
+  lines.push(...steps.map((s, n) => `${n + 1}. ${s}`));
+  if (resources.length) lines.push("Help available:", ...resources.slice(0, 2).map((r) => `- ${r.name}: ${r.how_to_use}`));
+  return lines.join("\n");
+}
+
 // --- reply grammar ---
 
 export type Reply =
