@@ -2,94 +2,151 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1b2433">
   <link rel="icon" href="data:,">
-  <meta name="theme-color" content="#0b0b0f">
   <title>BidBy</title>
   <style>
-    :root { --bg1: #1d2a3a; --bg2: #0b0b0f; --fg: #fff; --dim: rgba(255,255,255,.62); --red: #ff3b30; --green: #34c759; }
+    /* Modeled on the iPhone call screens (iOS 17/18): nothing about the item is shown; the agent says it. */
+    :root {
+      --fg: #fff;
+      --dim: rgba(255, 255, 255, .72);
+      --glass: rgba(255, 255, 255, .17);
+      --red: #eb4e3d;
+      --green: #65c466;
+      --sf: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
+    }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    html, body { margin: 0; height: 100%; background: var(--bg2); color: var(--fg);
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif; }
-    body { background: radial-gradient(120% 80% at 50% 0%, var(--bg1), var(--bg2)); overflow: hidden; user-select: none; }
+    html, body { margin: 0; height: 100%; color: var(--fg); font-family: var(--sf); -webkit-font-smoothing: antialiased; }
+    body {
+      overflow: hidden; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+      /* stands in for the blurred wallpaper behind an iOS call */
+      background:
+        radial-gradient(90% 55% at 20% 8%, rgba(120, 140, 170, .55), transparent 70%),
+        radial-gradient(80% 60% at 90% 30%, rgba(70, 90, 125, .5), transparent 70%),
+        linear-gradient(180deg, #3b4658 0%, #222a37 48%, #12161d 100%);
+    }
+    button { font-family: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+
     .screen { position: fixed; inset: 0; display: none; flex-direction: column; align-items: center;
-      padding: calc(env(safe-area-inset-top) + 64px) 24px calc(env(safe-area-inset-bottom) + 48px); text-align: center; }
+      padding: calc(env(safe-area-inset-top) + 64px) 0 calc(env(safe-area-inset-bottom) + 44px); }
     .screen.on { display: flex; }
-    .avatar { width: 96px; height: 96px; border-radius: 50%; display: grid; place-items: center; font-size: 40px; font-weight: 600;
-      background: linear-gradient(160deg, #5b6b80, #39465a); margin-bottom: 18px; }
-    .name { font-size: 38px; font-weight: 400; letter-spacing: .2px; margin: 0; }
-    .sub { color: var(--dim); font-size: 17px; margin-top: 8px; line-height: 1.35; max-width: 320px; }
+
+    .caller { text-align: center; }
+    .caller .name { font-size: 40px; font-weight: 400; letter-spacing: -.2px; line-height: 1.1; margin: 0; }
+    .caller .label { font-size: 18px; color: var(--dim); margin-top: 6px; letter-spacing: -.2px; }
     .spacer { flex: 1; }
-    .row { display: flex; width: 100%; max-width: 320px; justify-content: space-between; }
-    .btn { display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--fg); font-size: 15px;
-      background: none; border: 0; padding: 0; font-family: inherit; cursor: pointer; }
-    .circle { width: 76px; height: 76px; border-radius: 50%; display: grid; place-items: center; }
-    .circle svg { width: 34px; height: 34px; fill: #fff; }
-    .red .circle { background: var(--red); }
-    .green .circle { background: var(--green); }
-    .grey .circle { background: rgba(255,255,255,.18); }
-    .grey.active .circle { background: #fff; }
-    .grey.active .circle svg { fill: #111; }
-    .ring .green .circle { animation: pulse 1.2s ease-in-out infinite; }
-    @keyframes pulse { 50% { transform: scale(1.08); box-shadow: 0 0 0 14px rgba(52,199,89,.18); } }
-    .primary { margin-top: 28px; background: var(--green); color: #fff; border: 0; border-radius: 14px; font-size: 18px;
-      font-weight: 600; padding: 16px 28px; font-family: inherit; }
-    .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--green); margin-right: 8px;
-      animation: blink 2s ease-in-out infinite; }
-    .dot.off { background: #8e8e93; animation: none; }
-    @keyframes blink { 50% { opacity: .35; } }
-    .caption { min-height: 4.2em; margin-top: 28px; font-size: 17px; line-height: 1.4; color: rgba(255,255,255,.88); max-width: 340px; }
-    .caption small { display: block; color: var(--dim); font-size: 13px; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .6px; }
-    .note { color: var(--dim); font-size: 13px; margin-top: 18px; max-width: 300px; }
+
+    /* --- incoming --- */
+    .quick { display: flex; justify-content: space-between; width: 100%; max-width: 312px; margin-bottom: 44px; }
+    .quick button { width: 78px; display: flex; flex-direction: column; align-items: center; gap: 7px; font-size: 14px; }
+    .quick svg { width: 26px; height: 26px; fill: #fff; }
+    .answer { display: flex; justify-content: space-between; width: 100%; max-width: 312px; }
+    .answer button { width: 78px; display: flex; flex-direction: column; align-items: center; gap: 9px; font-size: 15px; }
+    .round { width: 78px; height: 78px; border-radius: 50%; display: grid; place-items: center; }
+    .round svg { width: 36px; height: 36px; fill: #fff; }
+    .decline .round { background: var(--red); }
+    .accept .round { background: var(--green); }
+    button:active .round { filter: brightness(1.25); }
+
+    /* --- in call --- */
+    .grid { display: grid; grid-template-columns: repeat(3, 78px); column-gap: 30px; row-gap: 22px; margin-bottom: 8px; }
+    .grid button { display: flex; flex-direction: column; align-items: center; gap: 7px; font-size: 13px; }
+    .key .round { background: var(--glass); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); }
+    .key .round svg { width: 32px; height: 32px; }
+    .key.on .round { background: #fff; }
+    .key.on .round svg { fill: #000; }
+    .end .round { background: var(--red); }
+    .ended .grid { opacity: .35; pointer-events: none; }
+    #timer { font-variant-numeric: tabular-nums; }
+
+    /* --- stand by (not a call screen: the page waiting for BidBy to call) --- */
+    #setup, #standby { justify-content: center; text-align: center; padding-left: 32px; padding-right: 32px; }
+    .hint { color: var(--dim); font-size: 15px; line-height: 1.4; max-width: 300px; margin: 14px auto 0; }
+    .arm { margin-top: 30px; background: var(--green); color: #fff; border-radius: 14px; font-size: 17px; font-weight: 600; padding: 15px 28px; }
+    .status { font-size: 15px; color: var(--dim); margin-top: 10px; }
+    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--green); margin-right: 7px; vertical-align: 1px; }
+    .dot.off { background: #8e8e93; }
   </style>
 </head>
 <body>
   <!-- BidBy phone (VOICE_MODE=browser): keep this page open in Safari; it rings when BidBy calls. -->
 
   <section id="setup" class="screen on">
-    <div class="avatar">B</div>
-    <h1 class="name">BidBy</h1>
-    <div class="sub">BidBy texts and calls you when money is at risk: aid, fees, deadlines.</div>
-    <button id="arm" class="primary">Stand by for calls</button>
-    <div class="note">Allows sound and the microphone, and keeps the screen on. Turn off silent mode.</div>
+    <div class="caller"><h1 class="name">BidBy</h1></div>
+    <div class="hint">BidBy texts and calls you when money is at risk: aid, fees, deadlines.</div>
+    <button id="arm" class="arm">Stand by for calls</button>
+    <div class="hint">Allows sound and the microphone and keeps the screen on. Turn off silent mode.</div>
   </section>
 
   <section id="standby" class="screen">
-    <div class="avatar">B</div>
-    <h1 class="name">BidBy</h1>
-    <div class="sub"><span id="linkDot" class="dot"></span><span id="linkText">Standing by</span></div>
-    <div class="spacer"></div>
-    <div class="note" id="micNote"></div>
-    <div class="note">Keep this page open. BidBy calls you when a deadline with money at risk is about to be missed.</div>
+    <div class="caller"><h1 class="name">BidBy</h1></div>
+    <div class="status"><span id="linkDot" class="dot"></span><span id="linkText">Standing by</span></div>
+    <div class="hint" id="note"></div>
   </section>
 
-  <section id="incoming" class="screen ring">
-    <div class="sub">BidBy is calling…</div>
-    <h1 class="name" style="margin-top:6px">BidBy</h1>
-    <div class="sub" id="inTitle"></div>
+  <section id="incoming" class="screen">
+    <div class="caller">
+      <h1 class="name">BidBy</h1>
+      <div class="label">mobile</div>
+    </div>
     <div class="spacer"></div>
-    <div class="row">
-      <button class="btn red" id="decline"><span class="circle"><svg viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08a.996.996 0 0 1 0-1.41C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28a11.27 11.27 0 0 0-2.67-1.85.996.996 0 0 1-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg></span>Decline</button>
-      <button class="btn green" id="accept"><span class="circle"><svg viewBox="0 0 24 24"><path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1C10.61 21 3 13.39 3 4c0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg></span>Accept</button>
+    <div class="quick">
+      <button id="remind" aria-label="Remind Me">
+        <svg viewBox="0 0 24 24"><path d="M12 4a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 16.2A7.2 7.2 0 1 1 12 5.8a7.2 7.2 0 0 1 0 14.4zm.9-11.7h-1.8v5.07l4.13 2.48.92-1.5-3.25-1.93V8.5zM5.6 2.3 1.9 5.4l1.16 1.38 3.7-3.1L5.6 2.3zm12.8 0-1.16 1.38 3.7 3.1L22.1 5.4l-3.7-3.1z"/></svg>
+        Remind Me
+      </button>
+      <button id="message" aria-label="Message">
+        <svg viewBox="0 0 24 24"><path d="M12 3C6.48 3 2 6.92 2 11.75c0 2.73 1.43 5.17 3.67 6.77-.13 1.13-.58 2.33-1.53 3.3 2.06.08 3.73-.73 4.8-1.64 1 .25 2 .38 3.06.38 5.52 0 10-3.92 10-8.8S17.52 3 12 3z"/></svg>
+        Message
+      </button>
+    </div>
+    <div class="answer">
+      <button class="decline" id="decline" aria-label="Decline">
+        <span class="round"><svg viewBox="0 0 24 24"><path d="M12 9.2c-1.65 0-3.25.26-4.75.75v3.1c0 .4-.23.75-.57.92-1 .5-1.92 1.15-2.73 1.9a.98.98 0 0 1-1.4-.02L.3 13.6a1 1 0 0 1 0-1.42C3.38 9.26 7.5 7.4 12 7.4s8.62 1.86 11.7 4.78a1 1 0 0 1 0 1.42l-2.25 2.25a.98.98 0 0 1-1.4.02 11.6 11.6 0 0 0-2.73-1.9 1.02 1.02 0 0 1-.57-.92v-3.1A15.3 15.3 0 0 0 12 9.2z"/></svg></span>
+        Decline
+      </button>
+      <button class="accept" id="accept" aria-label="Accept">
+        <span class="round"><svg viewBox="0 0 24 24"><path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1C10.61 21 3 13.39 3 4c0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg></span>
+        Accept
+      </button>
     </div>
   </section>
 
   <section id="incall" class="screen">
-    <h1 class="name">BidBy</h1>
-    <div class="sub" id="callStatus">Connecting…</div>
-    <div class="sub" id="callTitle" style="margin-top:4px"></div>
-    <div class="caption" id="caption"></div>
-    <div class="spacer"></div>
-    <div class="row" style="justify-content:space-around">
-      <button class="btn grey" id="mute"><span class="circle"><svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg></span>Mute</button>
-      <button class="btn red" id="hangup"><span class="circle"><svg viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08a.996.996 0 0 1 0-1.41C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28a11.27 11.27 0 0 0-2.67-1.85.996.996 0 0 1-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg></span>End</button>
+    <div class="caller">
+      <h1 class="name">BidBy</h1>
+      <div class="label" id="timer">00:00</div>
     </div>
-  </section>
-
-  <section id="ended" class="screen">
-    <h1 class="name">BidBy</h1>
-    <div class="sub" id="endedText">Call ended</div>
+    <div class="spacer"></div>
+    <div class="grid">
+      <button class="key on" id="speaker" aria-label="speaker">
+        <span class="round"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05A4.47 4.47 0 0 0 16.5 12zM14 3.23v2.06a7 7 0 0 1 0 13.42v2.06a9 9 0 0 0 0-17.54z"/></svg></span>
+        speaker
+      </button>
+      <button class="key" id="facetime" aria-label="FaceTime">
+        <span class="round"><svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg></span>
+        FaceTime
+      </button>
+      <button class="key" id="mute" aria-label="mute">
+        <span class="round"><svg viewBox="0 0 24 24"><path d="M19 11h-1.7c0 .74-.16 1.43-.43 2.05l1.23 1.23c.56-.98.9-2.09.9-3.28zm-4.02.17c0-.06.02-.11.02-.17V5c0-1.66-1.34-3-3-3S9 3.34 9 5v.18l5.98 5.99zM4.27 3 3 4.27l6.01 6.01V11c0 1.66 1.33 3 2.99 3 .22 0 .44-.03.65-.08l1.66 1.66c-.71.33-1.5.52-2.31.52-2.76 0-5.3-2.1-5.3-5.1H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c.91-.13 1.77-.45 2.54-.9L19.73 21 21 19.73 4.27 3z"/></svg></span>
+        mute
+      </button>
+      <button class="key" id="more" aria-label="more">
+        <span class="round"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/></svg></span>
+        more
+      </button>
+      <button class="end" id="hangup" aria-label="end">
+        <span class="round"><svg viewBox="0 0 24 24"><path d="M12 9.2c-1.65 0-3.25.26-4.75.75v3.1c0 .4-.23.75-.57.92-1 .5-1.92 1.15-2.73 1.9a.98.98 0 0 1-1.4-.02L.3 13.6a1 1 0 0 1 0-1.42C3.38 9.26 7.5 7.4 12 7.4s8.62 1.86 11.7 4.78a1 1 0 0 1 0 1.42l-2.25 2.25a.98.98 0 0 1-1.4.02 11.6 11.6 0 0 0-2.73-1.9 1.02 1.02 0 0 1-.57-.92v-3.1A15.3 15.3 0 0 0 12 9.2z"/></svg></span>
+        end
+      </button>
+      <button class="key" id="keypad" aria-label="keypad">
+        <span class="round"><svg viewBox="0 0 24 24"><circle cx="6" cy="4.5" r="1.9"/><circle cx="12" cy="4.5" r="1.9"/><circle cx="18" cy="4.5" r="1.9"/><circle cx="6" cy="10.2" r="1.9"/><circle cx="12" cy="10.2" r="1.9"/><circle cx="18" cy="10.2" r="1.9"/><circle cx="6" cy="15.9" r="1.9"/><circle cx="12" cy="15.9" r="1.9"/><circle cx="18" cy="15.9" r="1.9"/><circle cx="12" cy="21.4" r="1.9"/></svg></span>
+        keypad
+      </button>
+    </div>
   </section>
 
   <script type="module">
@@ -124,25 +181,28 @@
       try { if (navigator.audioSession) navigator.audioSession.type = type; } catch {}
     }
 
-    // --- ringtone (Web Audio, no files) ---
+    // --- ringtone: a marimba-like arpeggio in the spirit of the iPhone default (Web Audio, no files) ---
+
+    function note(freq, t, len) {
+      for (const [mult, gain] of [[1, 0.32], [4, 0.06]]) { // fundamental + a bright overtone
+        const o = audio.createOscillator();
+        const g = audio.createGain();
+        o.type = "sine";
+        o.frequency.value = freq * mult;
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(gain, t + 0.008);
+        g.gain.exponentialRampToValueAtTime(0.0008, t + len);
+        o.connect(g).connect(audio.destination);
+        o.start(t);
+        o.stop(t + len + 0.02);
+      }
+    }
 
     function chime() {
       if (!audio) return;
-      const notes = [1318.5, 1568, 1975.5, 1568, 1318.5, 1568, 1975.5, 2637];
       const t0 = audio.currentTime + 0.02;
-      notes.forEach((f, i) => {
-        const o = audio.createOscillator();
-        const g = audio.createGain();
-        o.type = "triangle";
-        o.frequency.value = f;
-        const t = t0 + i * 0.13;
-        g.gain.setValueAtTime(0, t);
-        g.gain.linearRampToValueAtTime(0.35, t + 0.01);
-        g.gain.exponentialRampToValueAtTime(0.001, t + 0.24);
-        o.connect(g).connect(audio.destination);
-        o.start(t);
-        o.stop(t + 0.26);
-      });
+      const phrase = [659.3, 987.8, 1318.5, 987.8, 1174.7, 987.8, 1318.5, 1568]; // E5 B5 E6 B5 D6 B5 E6 G6
+      phrase.forEach((f, i) => note(f, t0 + i * 0.15, 0.42));
     }
 
     function startRing() {
@@ -150,7 +210,7 @@
       audioSession("playback"); // ring even with the silent switch on (Safari 17+)
       audio?.resume();
       chime();
-      ringTimer = setInterval(chime, 2600);
+      ringTimer = setInterval(chime, 2700);
       navigator.vibrate?.([400, 200, 400]);
     }
 
@@ -161,12 +221,11 @@
 
     // --- stand by ---
 
-    let wakeLock = null;
     async function keepAwake() {
-      try { wakeLock = await navigator.wakeLock?.request("screen"); } catch {}
+      try { await navigator.wakeLock?.request("screen"); } catch {}
     }
     document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible" && $("setup").classList.contains("on") === false) keepAwake();
+      if (document.visibilityState === "visible" && audio) keepAwake();
     });
 
     // Everything that needs the tap's user activation starts before the first await; nothing here blocks standby.
@@ -177,7 +236,7 @@
       keepAwake();
       navigator.mediaDevices?.getUserMedia({ audio: true })
         .then((stream) => stream.getTracks().forEach((t) => t.stop()))
-        .catch(() => { $("micNote").textContent = "Microphone blocked: allow it for this site in Safari settings."; });
+        .catch(() => { $("note").textContent = "Microphone blocked: allow it for this site in Safari settings."; });
       sdk = import(SDK);
       show("standby");
       poll();
@@ -205,50 +264,42 @@
       if (call && call.phase === "ringing" && !handled.has(call.id)) {
         if (ringingId !== call.id) {
           ringingId = call.id;
-          $("inTitle").textContent = `${call.title} · ${call.amount} at risk · due ${call.deadline}`;
           show("incoming");
           startRing();
         }
         return;
       }
       if (ringingId && (!call || call.id !== ringingId || call.phase !== "ringing")) {
-        // Timed out, declined elsewhere, or answered on another device.
+        // Timed out, or answered on another device: like iOS, the incoming screen just goes away.
         handled.add(ringingId);
         ringingId = null;
         stopRing();
-        ended(call && call.phase === "in_call" ? "Answered on another device" : "Missed call");
+        $("note").textContent = call && call.phase === "in_call" ? "Answered on another device" : "Missed call from BidBy";
+        show("standby");
       }
     }
 
-    function ended(text) {
-      $("endedText").textContent = text;
-      show("ended");
-      setTimeout(() => { if (!busy && !ringingId) show("standby"); }, 3500);
-    }
+    // --- decline (Decline, Remind Me and Message all decline, as on iPhone) ---
 
-    // --- decline / answer / in call ---
-
-    $("decline").onclick = async () => {
+    async function decline() {
       const id = ringingId;
       if (!id) return;
       handled.add(id);
       ringingId = null;
       stopRing();
+      show("standby");
+      $("note").textContent = "";
       await api("/decline", { call_id: id, reason: "busy" });
-      ended("Call declined");
-    };
+    }
+    $("decline").onclick = decline;
+    $("remind").onclick = decline;
+    $("message").onclick = decline;
+
+    // --- answer / in call ---
 
     let started = 0;
     let clock = null;
     const mmss = (s) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
-
-    function caption(who, text) {
-      const el = $("caption");
-      el.replaceChildren();
-      const small = document.createElement("small");
-      small.textContent = who;
-      el.append(small, document.createTextNode(text));
-    }
 
     $("accept").onclick = async () => {
       const id = ringingId;
@@ -257,14 +308,13 @@
       handled.add(id);
       ringingId = null;
       stopRing();
-      $("callTitle").textContent = $("inTitle").textContent;
-      $("callStatus").textContent = "Connecting…";
-      $("caption").replaceChildren();
+      audioSession("auto"); // hand the audio session to WebRTC (loudspeaker)
+      $("incall").classList.remove("ended");
+      $("timer").textContent = "00:00";
       show("incall");
 
       const r = await api("/answer", { call_id: id });
-      if (!r.ok) { busy = false; return ended(r.data.error ?? "Couldn't connect"); }
-      audioSession("play-and-record");
+      if (!r.ok) return finish("Call Failed");
       try {
         const { Conversation } = await sdk;
         conversation = await Conversation.startSession({
@@ -273,43 +323,47 @@
           dynamicVariables: r.data.dynamic_variables,
           onConnect: () => {
             started = performance.now(); // display only (call timer)
-            clock = setInterval(() => { $("callStatus").textContent = mmss(Math.floor((performance.now() - started) / 1000)); }, 1000);
+            clock = setInterval(() => { $("timer").textContent = mmss(Math.floor((performance.now() - started) / 1000)); }, 1000);
           },
-          onDisconnect: () => finish("Call ended"),
+          onDisconnect: () => finish("Call Ended"),
           onError: (message) => console.error("BidBy call error", message),
-          onMessage: (m) => {
-            const role = m.source ?? m.role;
-            if (m.message) caption(role === "user" ? "You" : "BidBy", m.message);
-          },
         });
         const attach = await api("/attach", { call_id: id, conversation_id: conversation.getId() });
-        if (!attach.ok) { await conversation.endSession(); finish("Answered on another device"); }
+        if (!attach.ok) { await conversation.endSession(); finish("Call Ended"); }
       } catch (err) {
         console.error(err);
-        finish("Couldn't connect");
+        finish("Call Failed");
       }
     };
 
     function finish(text) {
+      if (!busy || $("incall").classList.contains("ended")) return; // hang up + onDisconnect: once
       clearInterval(clock);
       conversation = null;
-      busy = false;
-      $("mute").classList.remove("active");
-      audioSession("auto");
-      ended(text);
+      $("timer").textContent = text;
+      $("incall").classList.add("ended");
+      $("mute").classList.remove("on");
+      setTimeout(() => {
+        busy = false;
+        $("note").textContent = "";
+        show("standby");
+      }, 2000);
     }
 
     $("hangup").onclick = async () => {
       if (conversation) await conversation.endSession();
-      else finish("Call ended");
+      else finish("Call Ended");
     };
 
     $("mute").onclick = () => {
       if (!conversation) return;
-      const muted = !$("mute").classList.contains("active");
+      const muted = !$("mute").classList.contains("on");
       conversation.setMicMuted(muted);
-      $("mute").classList.toggle("active", muted);
+      $("mute").classList.toggle("on", muted);
     };
+
+    // Speaker, FaceTime, more and keypad are there for the look; the call already plays on the loudspeaker.
+    $("speaker").onclick = () => $("speaker").classList.toggle("on");
   </script>
 </body>
 </html>
