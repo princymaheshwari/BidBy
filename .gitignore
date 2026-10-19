@@ -1,7 +1,5 @@
 # --- planning docs (kept local for now) ---
 /docs/
-/specs/
-/CLAUDE.md
 
 # --- Claude Code ---
 .claude/
