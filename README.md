@@ -2,7 +2,9 @@
 
 **Your money deadlines, ranked by what they'd cost you, in the iMessage thread you already read.**
 
-Built solo for Hack Like W@CC 2026, Finance track.
+Built solo for Hack Like W@CC 2026.
+
+🏆 Winner of the Finance track and ElevenLabs track.
 
 ## The problem
 
